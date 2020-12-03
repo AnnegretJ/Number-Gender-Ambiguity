@@ -1,0 +1,245 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Feb 24 17:18:54 2020
+Last updated on Nov 12 17:31 2020
+
+@original_author: Lenka
+@follow_ups: Annegret
+"""
+
+import xml.etree.cElementTree as ET
+import re
+import os
+from collections import defaultdict
+from nltk.corpus import wordnet as wn
+
+
+# path to data
+path = "C:\\Users\\Tili\\Documents\\DFKI\\MLT\\BERT-stuff\\wiktionary\\wiktionaries\\"
+# path = "/home/tili/Documents/DFKI/MLT/"
+
+
+def get_plural_wiktionary(text_wiki, stem):
+    """
+    Helper function for getting plural information from wiktionary entry \n
+    :param text_wiki: one entry from text_wiki \n
+    :return: plural of the entry as list containing all possible plural-forms\n
+    """   
+    plural = []
+    re_plural_only = re.compile("{{en-plural noun}}")
+    re_plural_none = re.compile("{{en-noun\|\-}}")
+    re_plural_none_or_more = re.compile("{{en-noun\|\-\|([A-Za-z|æ' ]+)}}")
+    re_plural_s = re.compile("{{en-noun(\|\~\|*(es|s)*)*}}") # kann "~" als ersatz für s anhängen nicht erkennen
+    re_plural_s_or_more = re.compile("{{en-noun\|[\~\|]*(s|es)*\|([A-Za-z|æ' ]+)}}")
+    re_plural_diff = re.compile("{{en-noun\|([A-Za-z|æ' ]+)?(\|([A-Za-z|æ' ]+)?)*}}")
+    re_plural_head = re.compile("{{en-noun|head=\[\[[A-Za-z]+\]\]\[\['s\]\] \[\[[a-z]+]\]\]\|\~}}")
+    if re_plural_s.search(text_wiki): # search the entire text for a plural form, repeat with every variation until result is found
+        splitlist = re_plural_s.search(text_wiki).group().split("|")
+        # print(stem,splitlist)
+        if len(splitlist) == 1: # when it only says "en-noun"
+            pluralform = stem + "s" # words with plural s
+        else: # when there is additional information on the type of ending, e.g. "es" or "~"
+            for i in splitlist[-1]:
+                if not i.isalpha() and not i == "~":
+                    splitlist[-1] = splitlist[-1].strip(i)
+            if splitlist[-1] == "~":
+                pluralform = stem + "s"
+            else:
+                pluralform = stem + splitlist[-1]
+        plural.append(pluralform)
+    elif re_plural_none.search(text_wiki):
+        plural.append('none') # words without plural
+    elif re_plural_none_or_more.search(text_wiki):
+        plural.append('none') # words with either no plural or some plural
+        mo = re_plural_none_or_more.search(text_wiki)
+        for i in range(1,len(mo.group().split("|"))): # for all possibilities of plurals
+            pluralform = mo.group().split("|")[i]
+            for i in pluralform:
+                    if not i.isalpha():
+                        pluralform = pluralform.strip(i)
+            if pluralform == "":
+                continue
+            if len(pluralform) <= 2:
+                plural.append(stem + pluralform) # when it's only the ending (nonsense -> nonsenses)                
+            else:
+                plural.append(pluralform) # when the entire word is written (accessibility -> accessibilites)
+    elif re_plural_only.search(text_wiki):
+        plural = ["plural only"] # words that only exist as plural form
+    elif re_plural_s_or_more.search(text_wiki): # now also containing words formerly dealed with in re_plural_head
+        mo = re_plural_s_or_more.search(text_wiki)
+        for i in range(1,len(mo.group().split("|"))):
+            try:
+                pluralform = mo.group().split("|")[i]
+                for x in pluralform:
+                    if not x.isalpha() and x != "|":
+                        pluralform = pluralform.strip(x)
+                if len(pluralform) <= 2:
+                    plural.append(stem + pluralform)
+                else:
+                    plural.append(pluralform)
+            except IndexError: # for "encyclopedia", it couldn't see that there were two entries instead of one, so additional splitting was necessary
+                double = plural.pop() # remove the last item from the list
+                doubles = double.split("|") # split it into the two different plurals it contains
+                plural.extend(doubles)
+    elif re_plural_diff.search(text_wiki):
+        mo = re_plural_diff.search(text_wiki) # words with other plural
+        for i in range(1,len(mo.group().split("|"))): # for all possibilities of plurals
+            try:
+                pluralform = mo.group().split("|")[i]
+                for x in pluralform:
+                        if not x.isalpha() and x != "|":
+                            pluralform = pluralform.strip(x)
+                if len(pluralform) <= 2:
+                    plural.append(stem + pluralform) # when it's only the ending (nonsense -> nonsenses)
+                else:
+                    plural.append(pluralform) # when the entire word is written (accessibility -> accessibilites)
+            except IndexError:
+                double = plural.pop()
+                doubles = double.split("|")
+                plural.extend(doubles)
+    elif re_plural_head.search(text_wiki):
+        pluralform = stem + "s"
+        plural.append(pluralform)
+    else:
+        plural.append('unspecified')
+    return plural
+
+
+def write_file(language,title,filename,cat):
+    if ":" in title: # when it is some kind of help page (not an actual entry)
+        return # skip the entire entry
+    if "=Noun==" in cat: # get the "noun" category                          
+        # senses = [] # create an empty list for the senses
+        # examples = []
+        senses = dict()
+        filename.write("title: " + str(title) + "\n")
+        # filename.write("pos: noun\n")
+        plural= get_plural_wiktionary(cat,title) # get the plural by current category and title
+        filename.write("\tplural: " + str(plural) + "\n")
+        lines = cat.split("\n")
+        current_sense = ""
+        for line in lines:
+            if line.startswith('# ') and not 'alternative' in line: # when the line contains a meaning that is not "being the alternative of another word"
+                sense = line # this line equals the sense/meaning
+                # senses.append(sense)  # add the sense to the list
+                current_sense = sense
+                # if title == "silk":
+                #     print(current_sense) 
+                #     # exit() 
+            elif language == "Spanish" and line.startswith("{{es-noun|"):
+                # {{es-noun|m-p}} 
+                current = line.split("|")
+                gender = current[1]
+                filename.write("\tgender: " + str(gender) + "\n")
+            elif line.startswith("#* {{"): # when the line is a quote, it usually contains an example sentence for the former line
+                if "passage=" in line: # when there is a passage for the example sentence
+                    example = line.split("passage=")[1] # find the "passage" part
+                    example = example.replace("}}","") # remove the closing brackets at the end of the line
+                    # examples.append((current_sense,example)) # write the sense and the according example into examples
+                    if current_sense not in senses.keys():
+                        senses[current_sense] = []
+                    senses[current_sense].append(example)
+                elif "passage-" in line:
+                    example = line.split("passage-")[1]
+                    example = example.replace("}}","")
+                    # examples.append((current_sense,example))
+                    if current_sense not in senses.keys():
+                        senses[current_sense] = []
+                    senses[current_sense].append(example)
+                elif "passage = " in line:
+                    example = line.split("passage = ")[1]
+                    example = example.replace("}}","")
+                    # examples.append((current_sense,example))
+                    if current_sense not in senses.keys():
+                        senses[current_sense] = []
+                    senses[current_sense].append(example)
+                else: # not all examples start with "passage"
+                    if title in line: # find out if there is an actual example sentence in this line by checking for the current word
+                        parts = line.split("|") # the parts of the quote are parted by |
+                        for subpart in parts: # for each part of the quote
+                            if title in subpart: # find the actual example sentence by searching for the title again
+                                example = subpart # the part containing the title is the example sentence
+                                # examples.append((current_sense,example)) # write the sense and the according example into examples
+                                if current_sense not in senses.keys():
+                                    senses[current_sense] = []
+                                senses[current_sense].append(example)
+                                break # no need to continue going over the other parts of the quote
+            elif line.startswith("#*: ''"):
+                example = line.split("#*: ")[1]
+                # examples.append((current_sense,example))
+                if current_sense not in senses.keys():
+                    senses[current_sense] = []
+                senses[current_sense].append(example)
+            # if "uncountable" in line: # when the word is uncountable
+        #     wiktionary_senses_uncountable.write(title + " : " + line + "\n") # add to file with uncountable words with index-number d
+    else:
+        return
+    counter = 1
+    # get additional senses/examples from WordNet
+    if senses == {}: # when there are no entries for this word
+        for item in wn.synsets(title,"n"): # find the according wiktionary noun synsets 
+            examples = item.examples()
+            if examples:
+                senses[item] = examples
+    for sense,examples in senses.items():
+        filename.write("\t\tsenses" + str(counter) + ": " + str(sense) + "\n")
+        for example in examples:
+            filename.write("\t\t\texamples" + str(counter) + ": " + str(example) + "\n")
+        counter += 1
+    filename.write("\n\n")                                          
+
+def english_xml_parser(language,infile,outfile,n=0):
+    tree = ET.parse(infile)
+    root = tree.getroot()        
+    # file for words that can't be classified as sg/pl
+    # with open(path +"enwiktionary_senses_uncountable.txt", mode = "w", encoding = "utf-8") as wiktionary_senses_uncountable:
+    for child in root:
+        for child2 in child:
+            if child.tag == '{http://www.mediawiki.org/xml/export-0.10/}page':
+                if (n % 10000 == 0) and n != 0:
+                    print(n) # sanity check
+                for grandchild in child2: # the "page" part of the xml file
+                    if grandchild.tag == "{http://www.mediawiki.org/xml/export-0.10/}title":
+                        title = grandchild.text # this is the title of the entry -> the word, this happens in the first iteration
+                        grandchild.clear()
+                    elif grandchild.tag == "{http://www.mediawiki.org/xml/export-0.10/}revision":
+                        for element in grandchild.findall("{http://www.mediawiki.org/xml/export-0.10/}text"): # this is the case for every iteration after the first one
+                            # we are talking about the text-part containing the languages, not the one containing information on flection
+                                text_wiki = element.text
+                                if text_wiki: # when there is any text in this part of the tree
+                                    for textbit in text_wiki.split('----'):      
+                                        if "==" + language + "==" in textbit: # find the section for the current language (English Spanish German)
+                                            # if title == "silk":
+                                            #     print(textbit)
+                                            #     exit()
+                                            if "===Etymology" not in textbit: # when there is no etymology
+                                                for cat in textbit.split("\n=="): # find the different categories in this subtree
+                                                    if title != None:
+                                                        write_file(language,title,outfile,cat)
+                                            else:
+                                                segments = textbit.split('===Etymology') # find etymology
+                                                for segment in segments: # for each part of the etymology
+                                                    if segment.startswith("===\n"): # find the categories
+                                                        for cat in segment.split("\n=="): # for each category
+                                                            if title != None:
+                                                                write_file(language,title,outfile,cat)
+                                                    elif re.match("\s*\d+===",segment): # find other kinds of categories
+                                                        for cat in segment.split("\n=="): # for each category
+                                                            if title != None:
+                                                                write_file(language,title,outfile,cat)
+                                    # if title == "silk":
+                                    #     exit()
+                                else:
+                                    element.clear()
+                    else:
+                        grandchild.clear()
+                n += 1
+        else:
+            pass
+            child.clear()
+
+with open(path +'enwiktionary-new.txt', mode='w+', encoding="utf8") as wiktionary_out:
+    n = 0 # counter for entries
+    for filename in os.listdir(path + "by_entry\\"): # \ for Windows, / for Linux
+        with open(path + "by_entry\\" + filename, mode = "r", encoding = "utf-8") as file_in_wiktionary:
+            english_xml_parser("English",file_in_wiktionary,wiktionary_out,n=n)
