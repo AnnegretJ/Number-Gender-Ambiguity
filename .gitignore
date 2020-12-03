@@ -12,6 +12,7 @@ spanish_wiktionary/wiktionaries/*
 *.xml
 *.pkl
 *.zip
+*.txt
 */.csv
 */.pkl
 */.xml
