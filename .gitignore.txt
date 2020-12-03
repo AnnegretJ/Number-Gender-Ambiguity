@@ -1,0 +1,15 @@
+.idea
+.vscode
+__pycache__/*
+german_wiktionary/__pycache__/*
+spanish_wiktionary/__pycache__/*
+presentation/*
+split_files_output/*
+wiktionaries/*
+german_wiktionary/wiktionaries/*
+spanish_wiktionary/wiktionaries/*
+*.csv
+*.xml
+*.pkl
+*.pdf
+*.txt
