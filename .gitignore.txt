@@ -10,6 +10,9 @@ german_wiktionary/wiktionaries/*
 spanish_wiktionary/wiktionaries/*
 *.csv
 *.xml
-*.pkl
-*.pdf
-*.txt
+*/.csv
+*/.pkl
+*/.xml
+*/*/.csv
+*/*/.pkl
+*/*/.xml
