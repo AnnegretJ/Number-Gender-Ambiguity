@@ -11,7 +11,7 @@ n = 1 # file counter
 
 if language == "German":
     # path = "/home/tili/Documents/DFKI/MLT/gewiktionary/"
-    path = "C:\\Users\\Tili\\Documents\\DFKI\\MLT\\BERT-stuff\\wiktionary\\german_wiktionary\\wiktionaries\\"
+    path = "german_wiktionary\\wiktionaries\\"
     original = path + "dewiktionary-20200501-pages-articles.xml"
     child_language_pattern = re.compile(r"\(\{\{Sprache\|(.*?)\}\}\)")
     # ({{Sprache|Latein}}) ==
@@ -62,7 +62,7 @@ if language == "German":
         s.write(b"</mediawiki>")
 elif language == "English":
     # path = "/home/tili/Documents/DFKI/MLT/"
-    path = "C:\\Users\\Tili\\Documents\\DFKI\\MLT\\BERT-stuff\\wiktionary\\wiktionaries\\"
+    path = "english_wiktionary\\wiktionaries\\"
     original = path + "enwiktionary-20200501-pages-articles.xml"
     child_language_pattern = re.compile(r"\}\}\n==(.*?)==")
     context = ET.iterparse(original, events=("end", ))
@@ -110,7 +110,7 @@ elif language == "English":
             g.write(b"</mediawiki>")
         s.write(b"</mediawiki>")
 elif language == "Spanish":
-    path = "C:\\Users\\Tili\\Documents\\DFKI\\MLT\\BERT-stuff\\wiktionary\\spanish_wiktionary\\wiktionaries\\"
+    path = "spanish_wiktionary\\wiktionaries\\"
     original = path + "eswiktionary-20200501-pages-articles.xml"
     child_language_pattern = re.compile(r"== \{\{lengua\|(.*?)\}\} ==")
     # == {{lengua|es}} ==

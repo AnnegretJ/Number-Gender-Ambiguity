@@ -10,7 +10,7 @@ from nltk.corpus import wordnet as wn
 import string
 
 def read_files():
-    path = "C:\\Users\\Tili\\Documents\\DFKI\\MLT\\BERT-stuff\\wiktionary\\wiktionaries\\"
+    path = "wiktionaries\\"
     with open(path + "enwiktionary-new.txt",mode="r",encoding="utf-8") as data:
         # with open(path + "enwiktionary_senses_uncountable_full.txt",mode="r",encoding="utf-8") as uncountables:
             entry_dict = dict()

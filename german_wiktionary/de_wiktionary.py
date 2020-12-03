@@ -13,7 +13,7 @@ from collections import defaultdict
 import string
 
 # path to data
-path = "C:\\Users\\Tili\\Documents\\DFKI\\MLT\\BERT-stuff\\wiktionary\\german_wiktionary\\wiktionaries\\"
+path = "wiktionaries\\"
 # path = "/home/tili/Documents/DFKI/MLT/gewiktionary/"
 
 re_number_of = re.compile(":\[(\d+)\]")

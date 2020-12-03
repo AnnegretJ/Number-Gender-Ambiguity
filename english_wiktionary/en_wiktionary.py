@@ -15,7 +15,7 @@ from nltk.corpus import wordnet as wn
 
 
 # path to data
-path = "C:\\Users\\Tili\\Documents\\DFKI\\MLT\\BERT-stuff\\wiktionary\\wiktionaries\\"
+path = "wiktionaries\\"
 # path = "/home/tili/Documents/DFKI/MLT/"
 
 

@@ -10,7 +10,7 @@ from collections import defaultdict
 import string
 
 def read_files():
-    path = "C:\\Users\\Tili\\Documents\\DFKI\\MLT\\BERT-stuff\\wiktionary\\german_wiktionary\\wiktionaries\\"
+    path = "wiktionaries\\"
     with open(path + "dewiktionary-new.txt",mode="r",encoding="utf-8") as data:
         with open("Ausnahmen.txt",mode="w+",encoding="utf-8") as ausnahmen:
             entry_dict = defaultdict()

@@ -21,9 +21,9 @@ import os
 from collections import defaultdict
 from nltk.corpus import wordnet as wn
 import sys
-sys.path.insert(1, "C:\\Users\\Tili\\Documents\\DFKI\\MLT\\BERT-stuff\\wiktionary\\")
+sys.path.insert(1, "..\\english_wiktionary\\")
 from en_wiktionary import *
-sys.path.insert(1, "C:\\Users\\Tili\\Documents\\DFKI\\MLT\\BERT-stuff\\wiktionary\\german_wiktionary\\")
+sys.path.insert(1, "..\\german_wiktionary\\")
 from de_wiktionary import *
 
 def get_plural_wiktionary(textbit):
@@ -76,7 +76,7 @@ def spanish_from_german(infile,outfile,n):
 
 
 # path to data
-path = "C:\\Users\\Tili\\Documents\\DFKI\\MLT\\BERT-stuff\\wiktionary\\spanish_wiktionary\\wiktionaries\\"
+path = "wiktionaries\\"
 with open(path +'eswiktionary-new.txt', mode='w+', encoding="utf8") as wiktionary_out:
     n = 0
     for filename in os.listdir(path + "by_entry\\"): # \ for Windows, / for Linux
@@ -112,7 +112,7 @@ with open(path +'eswiktionary-new.txt', mode='w+', encoding="utf8") as wiktionar
                 else:
                     pass
                     child.clear()
-    path = "C:\\Users\\Tili\\Documents\\DFKI\\MLT\\BERT-stuff\\wiktionary\\"
+    path = "..\\"
     with open(path + "spanish_from_english_dump.xml",encoding="utf-8") as e:
         spanish_from_english(e,wiktionary_out,n)
     with open(path + "spanish_from_german_dump.xml",encoding="utf-8") as g:
