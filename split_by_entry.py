@@ -1,18 +1,52 @@
 import xml.etree.ElementTree as ET
 import re
+import os
+import sys
 
 # path = "C:\\Users\\Tili\\Documents\\DFKI\\MLT\\BERT-stuff\\wiktionary\\wiktionaries\\"
 
-language = input("Choose one of the following languages: German English Spanish => ")
+
+if len(sys.argv) >= 2:
+    if sys.argv[1] in ["German","English","Spanish"]:
+        language = sys.argv[1]
+        if len(sys.argv) >= 3:
+            path = ""
+            original = sys.argv[2]
+        else:
+            if language == "German":
+                try:
+                    path = "german_wiktionary\\wiktionaries\\"
+                    original = path + "dewiktionary-20200501-pages-articles.xml"
+                except FileNotFoundError:
+                    print("Please specify a path.")
+                    sys.exit()
+            elif language == "English":
+                try:
+                    path = "english_wiktionary\\wiktionaries\\"
+                    original = path + "enwiktionary-20200501-pages-articles.xml"
+                except FileNotFoundError:
+                    print("Please specify a path.")
+                    sys.exit()
+            elif language == "Spanish":
+                try:
+                    path = "spanish_wiktionary\\wiktionaries\\"
+                    original = path + "eswiktionary-20200501-pages-articles.xml"
+                except FileNotFoundError:
+                    print("Please specify a path.")
+                    sys.exit()
+    else:
+        print(sys.argv[1], " is not available. Please choose from <German, English, Spanish>.")
+        sys.exit()
+else:
+    print("No language has been specified. Please choose from <German, English, Spanish>.")
+    sys.exit()
 
 # original = path + "enwiktionary-20200501-short.xml"
 
 n = 1 # file counter
 
+
 if language == "German":
-    # path = "/home/tili/Documents/DFKI/MLT/gewiktionary/"
-    path = "german_wiktionary\\wiktionaries\\"
-    original = path + "dewiktionary-20200501-pages-articles.xml"
     child_language_pattern = re.compile(r"\(\{\{Sprache\|(.*?)\}\}\)")
     # ({{Sprache|Latein}}) ==
     context = ET.iterparse(original, events=('end', ))
@@ -23,7 +57,15 @@ if language == "German":
             try:
                 while True:
                     print(n)
-                    title = path + "by_entry/dewiktionary_short_" + str(n)
+                    if path != "german_wiktionary\\wiktionaries\\":
+                        try:
+                            path = os.mkdir("german_wiktionary\\wiktionaries\\")
+                        except FileExistsError:
+                            path = "german_wiktionary\\wiktionaries\\"
+                    try:
+                        title = path + "by_entry/dewiktionary_short_" + str(n)
+                    except FileNotFoundError:
+                        title = path + os.mkdir("by_entry\\") + str(n)
                     filename = title + ".xml"
                     with open(filename, 'wb') as f:
                         f.write(b'<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.10/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.10/ http://www.mediawiki.org/xml/export-0.10.xsd" version="0.10" xml:lang="de">\n')
@@ -61,9 +103,6 @@ if language == "German":
             e.write(b"</mediawiki>")
         s.write(b"</mediawiki>")
 elif language == "English":
-    # path = "/home/tili/Documents/DFKI/MLT/"
-    path = "english_wiktionary\\wiktionaries\\"
-    original = path + "enwiktionary-20200501-pages-articles.xml"
     child_language_pattern = re.compile(r"\}\}\n==(.*?)==")
     context = ET.iterparse(original, events=("end", ))
     with open("spanish_from_english_dump.xml","wb") as s:
@@ -73,7 +112,15 @@ elif language == "English":
             try:
                 while True:
                     print(n)
-                    title = path + "by_entry/enwiktionary_short_" + str(n)
+                    if path != "english_wiktionary\\wiktionaries\\":
+                        try:
+                            path = os.mkdir("english_wiktionary\\wiktionaries\\")
+                        except FileExistsError:
+                            path = "english_wiktionary\\wiktionaries\\"
+                    try:
+                        title = path + "by_entry/enwiktionary_short_" + str(n)
+                    except FileNotFoundError:
+                        title = path + os.mkdir("by_entry\\") + str(n)
                     filename = title + ".xml"
                     with open(filename, 'wb') as f:
                         f.write(b'<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.10/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.10/ http://www.mediawiki.org/xml/export-0.10.xsd" version="0.10" xml:lang="en">\n')
@@ -110,8 +157,6 @@ elif language == "English":
             g.write(b"</mediawiki>")
         s.write(b"</mediawiki>")
 elif language == "Spanish":
-    path = "spanish_wiktionary\\wiktionaries\\"
-    original = path + "eswiktionary-20200501-pages-articles.xml"
     child_language_pattern = re.compile(r"== \{\{lengua\|(.*?)\}\} ==")
     # == {{lengua|es}} ==
     context = ET.iterparse(original, events=('end', ))
@@ -122,7 +167,15 @@ elif language == "Spanish":
             try:
                 while True:
                     print(n)
-                    title = path + "by_entry/eswiktionary_short_" + str(n)
+                    if path != "spanish_wiktionary\\wiktionaries\\":
+                        try:
+                            path = os.mkdir("spanish_wiktionary\\wiktionaries\\")
+                        except FileExistsError:
+                            path = "spanish_wiktionary\\wiktionaries\\"
+                    try:
+                        title = path + "by_entry/eswiktionary_short_" + str(n)
+                    except FileNotFoundError:
+                        title = path + os.mkdir("by_entry\\") + str(n)
                     filename = title + ".xml"
                     with open(filename, 'wb') as f:
                         f.write(b'<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.10/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.10/ http://www.mediawiki.org/xml/export-0.10.xsd" version="0.10" xml:lang="es">\n')

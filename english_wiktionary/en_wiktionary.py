@@ -12,11 +12,12 @@ import re
 import os
 from collections import defaultdict
 from nltk.corpus import wordnet as wn
+import sys
+from tqdm import tqdm
 
 
 # path to data
 path = "wiktionaries\\"
-# path = "/home/tili/Documents/DFKI/MLT/"
 
 
 def get_plural_wiktionary(text_wiki, stem):
@@ -196,8 +197,8 @@ def english_xml_parser(language,infile,outfile,n=0):
     for child in root:
         for child2 in child:
             if child.tag == '{http://www.mediawiki.org/xml/export-0.10/}page':
-                if (n % 10000 == 0) and n != 0:
-                    print(n) # sanity check
+                # if (n % 10000 == 0) and n != 0:
+                #     print(n) # sanity check
                 for grandchild in child2: # the "page" part of the xml file
                     if grandchild.tag == "{http://www.mediawiki.org/xml/export-0.10/}title":
                         title = grandchild.text # this is the title of the entry -> the word, this happens in the first iteration
@@ -239,7 +240,7 @@ def english_xml_parser(language,infile,outfile,n=0):
             child.clear()
 
 with open(path +'enwiktionary-new.txt', mode='w+', encoding="utf8") as wiktionary_out:
-    n = 0 # counter for entries
-    for filename in os.listdir(path + "by_entry\\"): # \ for Windows, / for Linux
+    n = 1 # counter for entries
+    for filename in tqdm(os.listdir(path + "by_entry\\")): # \ for Windows, / for Linux
         with open(path + "by_entry\\" + filename, mode = "r", encoding = "utf-8") as file_in_wiktionary:
             english_xml_parser("English",file_in_wiktionary,wiktionary_out,n=n)
