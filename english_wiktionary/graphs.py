@@ -7,7 +7,7 @@ import sys
 
 
 # import tensorflow as tf
-def tsne_plot(model,facts): # word,sense - vector
+def tsne_plot(model,facts,show_examples=False): # word,sense - vector
     "Creates a TSNE model and plots it"
     labels = []
     tokens = []
@@ -15,10 +15,16 @@ def tsne_plot(model,facts): # word,sense - vector
     for (word,sense) in model.keys():
         tokens.append(model[(word,sense)])
         labels.append(word)
-        try:
-            handles.append(str(sense) + str(facts[(word,sense)][0]) + str(facts[(word,sense)][1]))
-        except KeyError:
-            handles.append(sense)
+        if show_examples:
+            try:
+                handles.append(str(word) + " " + str(sense) + str(facts[(word,sense)][0]) + str(facts[(word,sense)][1]))
+            except KeyError:
+                handles.append(sense)
+        else:
+            try:
+                handles.append(str(word) + " " + str(sense) + str(facts[(word,sense)][0]))
+            except KeyError:
+                handles.append(sense)
     tsne_model = TSNE(perplexity=40, n_components=3, init='pca', n_iter=2500, random_state=23,)
     new_values = tsne_model.fit_transform(tokens)
     x = []
@@ -40,7 +46,7 @@ def tsne_plot(model,facts): # word,sense - vector
                      ha='right',
                      va='bottom')
     plot_handles, _ = scatter.legend_elements()
-    l = ax.legend(plot_handles, handles,bbox_to_anchor=(-0.1, 0.95),
+    l = ax.legend(plot_handles, handles,bbox_to_anchor=(-0.1, 1),
                 loc="best", title="Senses",mode="expand",borderaxespad=0.)
     plt.tight_layout(pad = 1.4, w_pad = 1.4, h_pad = 1.4)
     mng = plt.get_current_fig_manager()
@@ -87,9 +93,9 @@ else:
             print(word + " has not been found. Type 'Y' to skip this word, type 'N' to stop the iteration. Y/N")
             answer = input("=> ")
             while answer:
-                if answer == "N":
+                if answer.lower() == "n":
                     exit()
-                elif answer == "Y":
+                elif answer.lower() == "y":
                     # print(word)
                     # wordlist.remove(word)
                     break
@@ -113,8 +119,7 @@ else:
                 word_vector = data["Word Vector"][index].tolist()
                 number = ["number: " + data["Number"][index]]
                 example = ["example: " + data["Sentence"][index]]
-                print(example)
-                if i not in word_facts.keys():
+                if index not in word_facts.keys():
                     word_facts[(word,data["Sense"][index])] = [number,example] # store facts for later
                 # print(word_vector)
                 # print(word_vector.tolist())
@@ -123,4 +128,13 @@ else:
                 word_vectors[(word,data["Sense"][index])] = word_vector
 if len(word_vectors.keys()) != 0:
     # print(word_vectors.keys())
-    tsne_plot(word_vectors,word_facts)
+    answer = input("Show examples in legend? (Y/N) \n => ")
+    while answer:
+        if answer.lower() == "n":
+            tsne_plot(word_vectors,word_facts)
+            break
+        elif answer.lower() == "y":
+            tsne_plot(word_vectors,word_facts,show_examples=True)
+            break
+        else:
+            print("Invalid Input. Show examples? (Y/N) \n => ")

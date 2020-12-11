@@ -13,11 +13,7 @@ import os
 from collections import defaultdict
 from nltk.corpus import wordnet as wn
 import sys
-from tqdm import tqdm
 
-
-# path to data
-path = "wiktionaries\\"
 
 
 def get_plural_wiktionary(text_wiki, stem):
@@ -36,7 +32,6 @@ def get_plural_wiktionary(text_wiki, stem):
     re_plural_head = re.compile("{{en-noun|head=\[\[[A-Za-z]+\]\]\[\['s\]\] \[\[[a-z]+]\]\]\|\~}}")
     if re_plural_s.search(text_wiki): # search the entire text for a plural form, repeat with every variation until result is found
         splitlist = re_plural_s.search(text_wiki).group().split("|")
-        # print(stem,splitlist)
         if len(splitlist) == 1: # when it only says "en-noun"
             pluralform = stem + "s" # words with plural s
         else: # when there is additional information on the type of ending, e.g. "es" or "~"
@@ -109,48 +104,43 @@ def get_plural_wiktionary(text_wiki, stem):
 def write_file(language,title,filename,cat):
     if ":" in title: # when it is some kind of help page (not an actual entry)
         return # skip the entire entry
-    if "=Noun==" in cat: # get the "noun" category                          
-        # senses = [] # create an empty list for the senses
-        # examples = []
+    if "=Noun==" in cat: # get the "noun" category
         senses = dict()
         filename.write("title: " + str(title) + "\n")
-        # filename.write("pos: noun\n")
         plural= get_plural_wiktionary(cat,title) # get the plural by current category and title
         filename.write("\tplural: " + str(plural) + "\n")
         lines = cat.split("\n")
         current_sense = ""
+        all_gender = defaultdict(list)
         for line in lines:
             if line.startswith('# ') and not 'alternative' in line: # when the line contains a meaning that is not "being the alternative of another word"
                 sense = line # this line equals the sense/meaning
-                # senses.append(sense)  # add the sense to the list
                 current_sense = sense
-                # if title == "silk":
-                #     print(current_sense) 
-                #     # exit() 
             elif language == "Spanish" and line.startswith("{{es-noun|"):
-                # {{es-noun|m-p}} 
                 current = line.split("|")
                 gender = current[1]
-                filename.write("\tgender: " + str(gender) + "\n")
+                all_gender[title].append(gender)
+                
+            elif language == "German" and line.startswith("{{de-noun|"):
+                current = line.split("|")
+                gender = current[1]
+                all_gender[title].append(gender)
             elif line.startswith("#* {{"): # when the line is a quote, it usually contains an example sentence for the former line
                 if "passage=" in line: # when there is a passage for the example sentence
                     example = line.split("passage=")[1] # find the "passage" part
                     example = example.replace("}}","") # remove the closing brackets at the end of the line
-                    # examples.append((current_sense,example)) # write the sense and the according example into examples
                     if current_sense not in senses.keys():
                         senses[current_sense] = []
                     senses[current_sense].append(example)
                 elif "passage-" in line:
                     example = line.split("passage-")[1]
                     example = example.replace("}}","")
-                    # examples.append((current_sense,example))
                     if current_sense not in senses.keys():
                         senses[current_sense] = []
                     senses[current_sense].append(example)
                 elif "passage = " in line:
                     example = line.split("passage = ")[1]
                     example = example.replace("}}","")
-                    # examples.append((current_sense,example))
                     if current_sense not in senses.keys():
                         senses[current_sense] = []
                     senses[current_sense].append(example)
@@ -160,21 +150,18 @@ def write_file(language,title,filename,cat):
                         for subpart in parts: # for each part of the quote
                             if title in subpart: # find the actual example sentence by searching for the title again
                                 example = subpart # the part containing the title is the example sentence
-                                # examples.append((current_sense,example)) # write the sense and the according example into examples
                                 if current_sense not in senses.keys():
                                     senses[current_sense] = []
                                 senses[current_sense].append(example)
                                 break # no need to continue going over the other parts of the quote
             elif line.startswith("#*: ''"):
                 example = line.split("#*: ")[1]
-                # examples.append((current_sense,example))
                 if current_sense not in senses.keys():
                     senses[current_sense] = []
                 senses[current_sense].append(example)
-            # if "uncountable" in line: # when the word is uncountable
-        #     wiktionary_senses_uncountable.write(title + " : " + line + "\n") # add to file with uncountable words with index-number d
     else:
         return
+    filename.write("\tgender: " + str(all_gender[title]) + "\n")
     counter = 1
     # get additional senses/examples from WordNet
     if senses == {}: # when there are no entries for this word
@@ -189,16 +176,12 @@ def write_file(language,title,filename,cat):
         counter += 1
     filename.write("\n\n")                                          
 
-def english_xml_parser(language,infile,outfile,n=0):
+def english_xml_parser(language,infile,outfile,n=1):
     tree = ET.parse(infile)
     root = tree.getroot()        
-    # file for words that can't be classified as sg/pl
-    # with open(path +"enwiktionary_senses_uncountable.txt", mode = "w", encoding = "utf-8") as wiktionary_senses_uncountable:
     for child in root:
         for child2 in child:
             if child.tag == '{http://www.mediawiki.org/xml/export-0.10/}page':
-                # if (n % 10000 == 0) and n != 0:
-                #     print(n) # sanity check
                 for grandchild in child2: # the "page" part of the xml file
                     if grandchild.tag == "{http://www.mediawiki.org/xml/export-0.10/}title":
                         title = grandchild.text # this is the title of the entry -> the word, this happens in the first iteration
@@ -210,9 +193,6 @@ def english_xml_parser(language,infile,outfile,n=0):
                                 if text_wiki: # when there is any text in this part of the tree
                                     for textbit in text_wiki.split('----'):      
                                         if "==" + language + "==" in textbit: # find the section for the current language (English Spanish German)
-                                            # if title == "silk":
-                                            #     print(textbit)
-                                            #     exit()
                                             if "===Etymology" not in textbit: # when there is no etymology
                                                 for cat in textbit.split("\n=="): # find the different categories in this subtree
                                                     if title != None:
@@ -228,8 +208,6 @@ def english_xml_parser(language,infile,outfile,n=0):
                                                         for cat in segment.split("\n=="): # for each category
                                                             if title != None:
                                                                 write_file(language,title,outfile,cat)
-                                    # if title == "silk":
-                                    #     exit()
                                 else:
                                     element.clear()
                     else:
@@ -238,9 +216,3 @@ def english_xml_parser(language,infile,outfile,n=0):
         else:
             pass
             child.clear()
-
-with open(path +'enwiktionary-new.txt', mode='w+', encoding="utf8") as wiktionary_out:
-    n = 1 # counter for entries
-    for filename in tqdm(os.listdir(path + "by_entry\\")): # \ for Windows, / for Linux
-        with open(path + "by_entry\\" + filename, mode = "r", encoding = "utf-8") as file_in_wiktionary:
-            english_xml_parser("English",file_in_wiktionary,wiktionary_out,n=n)

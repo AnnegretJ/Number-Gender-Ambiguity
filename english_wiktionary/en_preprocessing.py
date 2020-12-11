@@ -19,9 +19,10 @@ def read_files(filename):
                 title = title.strip("\n")
                 if title[0].isupper():
                     continue
-                entry_dict[title] = dict()
-                entry_dict[title]["examples"] = defaultdict(list)
-                entry_dict[title]["senses"] = dict()
+                if title not in entry_dict.keys():
+                    entry_dict[title] = dict()
+                    entry_dict[title]["examples"] = defaultdict(list)
+                    entry_dict[title]["senses"] = dict()
             elif line.startswith("\tplural: ") and title in entry_dict.keys():
                 plural = line[len("\tplural: "):]
                 plural = eval(plural) # convert string back to list
@@ -31,9 +32,12 @@ def read_files(filename):
                 elif plural == ["unspecified"]:
                     del entry_dict[title] # remove all words with unspecified plural
                     continue
-                else:
+                if "plural" not in entry_dict[title].keys():
                     entry_dict[title]["plural"] = plural
-                entry_dict[title]["plural"] = plural
+                else:
+                    for item in plural:
+                        if item not in entry_dict[title]["plural"]:
+                            entry_dict[title]["plural"].append(item)
             elif line.startswith("\t\tsenses") and title in entry_dict.keys():
                 index = eval(line[len("\t\tsenses")])
                 senses = line[len("\t\tsenses")+3:] # +3 for "n: " with n being number

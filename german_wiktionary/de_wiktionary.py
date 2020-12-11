@@ -11,12 +11,9 @@ import xml.etree.cElementTree as ET
 import re
 from collections import defaultdict
 import string
+from tqdm import tqdm
+import sys
 
-# path to data
-path = "wiktionaries\\"
-# path = "/home/tili/Documents/DFKI/MLT/gewiktionary/"
-
-re_number_of = re.compile(":\[(\d+)\]")
 
 def write_dict(entries,title,language):
     """
@@ -24,6 +21,7 @@ def write_dict(entries,title,language):
     :param entries: dictionary for entries \n
     :param title: the currently observed word \n
     """
+    re_number_of = re.compile(":\[(\d+)\]")
     i = 1
     if language == "German":
         senses = entries[title]["textbit"].split('== {{Wortart|Substantiv|Deutsch}}')
@@ -64,7 +62,16 @@ def write_dict(entries,title,language):
                         else:
                             g = morph.split(" ",1)[-1]
                         entries[title][i]["gender"].append(g)
-                    elif "Plural" in morph:
+                    elif "Plural" in morph or "Pl." in morph:
+                        if "=" in morph:
+                            plural = morph.split("=")[-1]
+                        else:
+                            plural = morph.split(" ",1)[-1]
+                        entries[title][i]["plural"].append(plural)
+            elif language == "English" and "Englisch Substantiv Übersicht" in field:
+                morphs = field.split("\n")
+                for morph in morphs:
+                    if "Plural" in morph or "Pl." in morph:
                         if "=" in morph:
                             plural = morph.split("=")[-1]
                         else:
@@ -73,7 +80,7 @@ def write_dict(entries,title,language):
             elif language == "German" and "Worttrennung}}" in field:
                 infos = field.split("\n")
                 for info in infos:
-                    if "Pl." in info:
+                    if "Pl." in info or "Plural" in info:
                         parts = info.split(",")
                         for part in parts:
                             if "kPl." in part:
@@ -103,7 +110,7 @@ def write_dict(entries,title,language):
                         entries[title][i]["examples"][number].append(e)
         i += 1
 
-def german_xml_parser(language,infile,outfile,entries,plurals=set(),n=0):
+def german_xml_parser(language,infile,outfile,entries=dict(),plurals=set(),n=0):
     tree = ET.parse(infile)
     root = tree.getroot()
     for child in root:
@@ -114,7 +121,7 @@ def german_xml_parser(language,infile,outfile,entries,plurals=set(),n=0):
                         if child3.text != None:
                             word = child3.text # this is the title of the entry -> the word, this happens in the first iteration
                             if language == "German" and word[-1] == "s" or word[-1] == "n" or word[-2:] == "en" or word[-1] == "e" or word[-2:] == "er": # when the word contains a typical ending for regular plural
-                                possible_regular_plurals.add(word) # add word into set of all words that could be a regular plural of some other word
+                                plurals.add(word) # add word into set of all words that could be a regular plural of some other word
                                 # this will be iterated over later on to see which words need to be added to the dictionary
                     elif child3.tag == "{http://www.mediawiki.org/xml/export-0.10/}revision":
                         for child4 in child3:
@@ -133,13 +140,14 @@ def german_xml_parser(language,infile,outfile,entries,plurals=set(),n=0):
             write_dict(entries,title,language)
             del entries[title]["textbit"]
     if language == "German":
-        word = possible_regular_plurals.pop()
+        word = plurals.pop()
         for item in entries: # title
             if word[:-1] == item or word[:-2] == item: # if the word looks like a pluralversion of the title
                 for subitem in entries[item]: # i
                     if word not in entries[item][subitem]["plural"]: # when the word is not already noted as a possible plural
                         entries[item][subitem]["plural"].append(word)
     for el in entries:
+        n += 1
         outfile.write("title: " + str(el) + "\n")
         for el2 in entries[el]:
             if "gender" in entries[el][el2]:
@@ -150,18 +158,7 @@ def german_xml_parser(language,infile,outfile,entries,plurals=set(),n=0):
                 outfile.write("\t\tflection: " + str(entries[el][el2]["flection"]) + "\n")
             if "senses" in entries[el][el2]:
                 for number in entries[el][el2]["senses"]:
-                    outfile.write("\t\tsense: " +  str(entries[el][el2]["senses"][number]) + "\n")
+                    outfile.write("\t\tsense" +  str(number) + ": " + str(entries[el][el2]["senses"][number]) + "\n")
                     if "examples" in entries[el][el2] and number in entries[el][el2]["examples"]:
-                        outfile.write("\t\t\texample(s)" + str(entries[el][el2]["examples"][number]) + "\n")
+                        outfile.write("\t\t\texample(s)" + str(number) + ": " +  str(entries[el][el2]["examples"][number]) + "\n")
         outfile.write("\n")
-
-
-
-entries = dict()
-possible_regular_plurals = set()
-with open(path + "dewiktionary-new.txt", mode = "w+", encoding = "utf-8") as wiktionary_out:
-    for filename in os.listdir(path + "by_entry/"):
-        with open(path + "by_entry/" + filename, mode = "r", encoding = "utf-8") as file_in_wiktionary:
-            german_xml_parser("German",file_in_wiktionary,wiktionary_out,entries,possible_regular_plurals)
-            
-                
