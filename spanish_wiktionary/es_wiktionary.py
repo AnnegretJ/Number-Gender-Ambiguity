@@ -34,6 +34,7 @@ def write_file(language,title,f,textbit):
     f.write("title: " + str(title) + "\n")
     plurals = get_plural_wiktionary(textbit)
     f.write("\tplural: " + str(plurals) + "\n")
+    current = "" # current sense
     for line in textbit.split("\n"):
         if language == "Spanish" or language == "German":
             if line.startswith("=== {{sustantivo "): # e.g. sustantivo femenino
@@ -51,23 +52,12 @@ def write_file(language,title,f,textbit):
             elif line.startswith(";") and line[1].isdigit():
                 senses[line[1]] = line[2:] # senses[index] = sense
                 examples[line[1]] = []
-        elif language == "English":
-            if line.startswith(";") and line[1].isdigit():
-                senses[line[1]] = line[2:]
-                examples[line[1]] = []
+                current = line[1] # save index of current sense
+            elif line.startswith("{{ejemplo}}"):
+                examples[current].append([line[len("{{ejemplo}} "):]]) # end of line is example sentence
+            elif line.startswith(":*'''Ejemplo''': "):
+                examples[current].append([line[len(":*'''Ejemplo''': "):]])
     f.write("\tgender: " + str(all_gender[title]) + "\n")
-    # if senses == {}:
-    #     n = 1
-    #     for item in wn.synsets(title,"n",lang="spa"): # find the according wiktionary noun synsets 
-    #         wn_examples = item.examples()
-    #         # print(item,wn_examples)
-    #         if len(wn_examples) > 0:
-    #             senses[n] = item
-    #             if n in examples.keys():
-    #                 examples[item].append(wn_examples)
-    #             else:
-    #                 examples[item] = wn_examples
-    #             n += 1
     for (index,sense) in senses.items():
         f.write("\t\tsense " + str(index) + ": " + str(sense) + "\n")
         for (sense_,example) in examples.items():
