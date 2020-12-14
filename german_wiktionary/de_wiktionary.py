@@ -174,7 +174,7 @@ def german_xml_parser(language,infile,outfile,entries=dict(),plurals=set(),n=0):
             if "plural" in entries[el][el2]:
                 outfile.write("\tplural: " + str(entries[el][el2]["plural"]) + "\n")
             if "flection" in entries[el][el2]:
-                outfile.write("\t\tflection: " + str(entries[el][el2]["flection"]) + "\n")
+                outfile.write("\t\tinflection: " + str(entries[el][el2]["flection"]) + "\n")
             if "senses" in entries[el][el2]:
                 for number in entries[el][el2]["senses"]:
                     outfile.write("\t\tsense" +  str(number) + ": " + str(entries[el][el2]["senses"][number]) + "\n")
