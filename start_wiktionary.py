@@ -14,11 +14,11 @@ if sys.argv[1]:
     if language.lower() == "english":
         path = "english_wiktionary\\wiktionaries\\"
         with open(path +'enwiktionary-new.txt', mode='w+', encoding="utf8") as wiktionary_out:
-            n = 1 # counter for entries
+            n=1 # entry counter
             print("Processing data from English wiktionary...")
             for filename in tqdm(os.listdir(path + "by_entry\\")): # \ for Windows, / for Linux
                 with open(path + "by_entry\\" + filename, mode = "r", encoding = "utf-8") as file_in_wiktionary:
-                    english_xml_parser(language,file_in_wiktionary,wiktionary_out,n=n)
+                    english_xml_parser(language,file_in_wiktionary,wiktionary_out,)
             print("Processing data from German wiktionary...")
             with open("english_from_german_dump.xml",mode="r",encoding="utf-8") as g:
                 german_xml_parser(language,g,wiktionary_out,entries=dict(),n=n)

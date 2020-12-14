@@ -1,5 +1,6 @@
 .idea
 .vscode
+__pycache__
 english_wiktionary/__pycache__/*
 german_wiktionary/__pycache__/*
 spanish_wiktionary/__pycache__/*

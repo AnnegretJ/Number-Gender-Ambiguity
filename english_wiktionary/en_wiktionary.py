@@ -13,6 +13,7 @@ import os
 from collections import defaultdict
 from nltk.corpus import wordnet as wn
 import sys
+import language_check # some module for grammar-checking
 
 
 
@@ -164,7 +165,7 @@ def write_file(language,title,filename,cat):
     filename.write("\tgender: " + str(all_gender[title]) + "\n")
     counter = 1
     # get additional senses/examples from WordNet
-    if senses == {}: # when there are no entries for this word
+    if senses == {} and language == "English": # when there are no entries for this word
         for item in wn.synsets(title,"n"): # find the according wiktionary noun synsets 
             examples = item.examples()
             if examples:
@@ -172,13 +173,43 @@ def write_file(language,title,filename,cat):
     for sense,examples in senses.items():
         filename.write("\t\tsenses" + str(counter) + ": " + str(sense) + "\n")
         for example in examples:
-            filename.write("\t\t\texamples" + str(counter) + ": " + str(example) + "\n")
+            if title in examples:
+                filename.write("\t\t\texamples" + str(counter) + ": " + str(example) + "\n")
+            else:
+                tool = language_check.LanguageTool("en-US") # create the tool for grammar-checking the adjusted examples
+                new_example = replace_words_in_examples_new(title,example,tool)
+                filename.write("\t\t\texamples" + str(counter) + ": " + str(example) + "\n")
         counter += 1
-    filename.write("\n\n")                                          
+    filename.write("\n\n")     
 
-def english_xml_parser(language,infile,outfile,n=1):
+def replace_words_in_examples_new(word,sentence,tool):
+    '''
+    instead of deleting entries where word does not appear in an example sentence, we replace the appearing synonym with the word
+    returns adjusted examples
+    '''
+    replace_item = ""
+    synonyms = wn.synsets(word, "n") # find all synonyms of the word, that are nouns as well
+    for syn in synonyms:
+        syn_lemmas = syn.lemma_names() # find the lemma for the synonym
+        for s in syn_lemmas:
+            if s in sentence.split(): # check if the synonym appears in the example sentence
+                replace_item = re.sub(r"\b{}\b".format(s),word,sentence.lower()) # replace the word by its synonym => this might lead to grammar problems
+                matches = tool.check(replace_item) # check if the sentence is grammatically correct
+                n = 0
+                while n < len(matches):
+                    new = language_check.correct(replace_item, matches[n:]) # correct the grammar by using the possible solutions in matches
+                    if word not in new.split():
+                        n += 1
+                    else:
+                        replace_item = new
+                        break
+                if word not in replace_item.split():
+                    replace_item = ""
+    return replace_item                                      
+
+def english_xml_parser(language,infile,outfile):
     tree = ET.parse(infile)
-    root = tree.getroot()        
+    root = tree.getroot()   
     for child in root:
         for child2 in child:
             if child.tag == '{http://www.mediawiki.org/xml/export-0.10/}page':
@@ -212,7 +243,6 @@ def english_xml_parser(language,infile,outfile,n=1):
                                     element.clear()
                     else:
                         grandchild.clear()
-                n += 1
         else:
             pass
             child.clear()

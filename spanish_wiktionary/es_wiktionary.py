@@ -11,11 +11,8 @@ import re
 import os
 from collections import defaultdict
 from nltk.corpus import wordnet as wn
+import language_check # some module for grammar-checking
 import sys
-# sys.path.insert(1, "..\\english_wiktionary\\")
-# from en_wiktionary import english_xml_parser
-# sys.path.insert(1, "..\\german_wiktionary\\")
-# from de_wiktionary import german_xml_parser
 from tqdm import tqdm
 
 def get_plural_wiktionary(textbit):
@@ -58,10 +55,25 @@ def write_file(language,title,f,textbit):
             elif line.startswith(":*'''Ejemplo''': "):
                 examples[current].append([line[len(":*'''Ejemplo''': "):]])
     f.write("\tgender: " + str(all_gender[title]) + "\n")
+    if language == "English" and senses == {}:
+        index = 0
+        for item in wn.synsets(title,"n"): # find the according wiktionary noun synsets 
+            senses[index] = item
+            sentences = item.examples()
+            actual_examples = []
+            for example in sentences:
+                if title in example:
+                    actual_examples.append(example)
+                else:
+                    tool = language_check.LanguageTool("en-US") # create the tool for grammar-checking the adjusted examples
+                    new_example = replace_words_in_examples_new(title,example,tool)
+                    actual_examples.append(new_example)
+            examples[index] = actual_examples
+            index += 1
     for (index,sense) in senses.items():
         f.write("\t\tsense " + str(index) + ": " + str(sense) + "\n")
-        for (sense_,example) in examples.items():
-            if sense == sense_:
+        for (sensename,example) in examples.items():
+            if sense == sensename:
                 f.write("\t\t\texample "+ str(index) + ": " + str(example) + "\n")
     f.write("\n\n")
 
@@ -94,4 +106,29 @@ def spanish_xml_parser(language,infile,outfile,n):
         else:
             pass
             child.clear()
+
+def replace_words_in_examples_new(word,sentence,tool):
+    '''
+    instead of deleting entries where word does not appear in an example sentence, we replace the appearing synonym with the word
+    returns adjusted examples
+    '''
+    replace_item = ""
+    synonyms = wn.synsets(word, "n") # find all synonyms of the word, that are nouns as well
+    for syn in synonyms:
+        syn_lemmas = syn.lemma_names() # find the lemma for the synonym
+        for s in syn_lemmas:
+            if s in sentence.split(): # check if the synonym appears in the example sentence
+                replace_item = re.sub(r"\b{}\b".format(s),word,sentence.lower()) # replace the word by its synonym => this might lead to grammar problems
+                matches = tool.check(replace_item) # check if the sentence is grammatically correct
+                n = 0
+                while n < len(matches):
+                    new = language_check.correct(replace_item, matches[n:]) # correct the grammar by using the possible solutions in matches
+                    if word not in new.split():
+                        n += 1
+                    else:
+                        replace_item = new
+                        break
+                if word not in replace_item.split():
+                    replace_item = ""
+    return replace_item 
 
