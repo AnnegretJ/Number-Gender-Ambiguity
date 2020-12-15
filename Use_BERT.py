@@ -119,7 +119,7 @@ def process_gender(language,gender_list,entry_dict,model,tokenizer,frame):
     for item in tqdm(gender_list):
         examples = entry_dict[item]["examples"]
         gender = entry_dict[item]["gender"]
-        if language == "German": # because flections are only saved for German by now
+        if language.lower() == "german": # because flections are only saved for German by now
             flections = entry_dict[item]["flection"]
         for g in gender:
             senses = entry_dict[item]["senses"][g]
@@ -156,31 +156,26 @@ def process_other(other,entry_dict,model,tokenizer,frame):
                 frame = frame.append({"Word":item,"Sense":sense,"Sentence":example,"Word Vector":word_vector,"Sentence Vector":sentence_embedding},ignore_index=True)
     return frame
 
-def write_files(language,path,filename,tokenizer,model,mode):
+def write_files(language,path,filename,tokenizer,model):
     print("Reading file...")
     entry_dict = read_files(filename)
     print(len(entry_dict.keys()))
     print("Getting data...")
     relevant_pairs,gender_list,other = find_sets(entry_dict)
     frame = pd.DataFrame(columns=["Word", "Number", "Gender", "Sense", "Sentence", "Word Vector", "Sentence Vector"])
-    if mode == "-n": # for number
-        frame = process_number(relevant_pairs,entry_dict,model,tokenizer,frame)
-        frame.to_csv(path + "number.csv",sep="\t")
-        frame.to_pickle(path + "number.pkl")
-    elif mode == "-g" and language != "English": # for gender
-        frame = process_gender(language,gender_list,entry_dict,model,tokenizer,frame)
-        frame.to_csv(path + "gender.csv",sep="\t")
-        frame.to_pickle(path + "gender.pkl")
-    elif mode == "-o": # for other
-        frame = process_other(other,entry_dict,model,tokenizer,frame)
-        frame.to_csv(path + "other.csv",sep="\t")
-        frame.to_pickle(path + "other.pkl")
-    else:
-        print("Invalid mode. Please choose from <-n,-o> for English, or from <-n,-g,-o> for Spanish and German.")
-        sys.exit()
+    number = process_number(relevant_pairs,entry_dict,model,tokenizer,frame)
+    number.to_csv(path + "number.csv",sep="\t")
+    number.to_pickle(path + "number.pkl")
+    other = process_other(other,entry_dict,model,tokenizer,frame)
+    other.to_csv(path + "other.csv",sep="\t")
+    other.to_pickle(path + "other.pkl")
+    if language.lower() != "english":
+        gender = process_gender(language,gender_list,entry_dict,model,tokenizer,frame)
+        gender.to_csv(path + "gender.csv", sep="\t")
+        gender.to_pickle(path + "gender.pkl")
 
 if __name__ == "__main__":
-    language = sys.argv[2]
+    language = sys.argv[1]
     if "win" in sys.platform:
         if language.lower() == "german":
             filename = "german_wiktionary\\wiktionaries\\dewiktionary-new.txt"
@@ -211,5 +206,5 @@ if __name__ == "__main__":
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
     # Load pre-trained model (weights)
     model = BertModel.from_pretrained('bert-base-uncased')
-    write_files(language,outpath,filename,tokenizer,model,sys.argv[1])
+    write_files(language,outpath,filename,tokenizer,model)
     

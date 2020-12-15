@@ -121,7 +121,7 @@ if __name__ == "__main__":
             sys.exit()
     elif "linux" in sys.platform:
         if language.lower() == "german":
-        filename = "german_wiktionary/wiktionaries/dewiktionary-new.txt"
+            filename = "german_wiktionary/wiktionaries/dewiktionary-new.txt"
         elif language.lower() == "english":
             filename = "english_wiktionary/wiktionaries/enwiktionary-new.txt"
         elif language.lower() == "spanish":
