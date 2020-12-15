@@ -36,17 +36,17 @@ if sys.argv[1]:
             if win:
                 for filename in tqdm(os.listdir(path + "by_entry\\")): # \ for Windows, / for Linux
                     with open(path + "by_entry\\" + filename, mode = "r", encoding = "utf-8") as file_in_wiktionary:
-                        english_xml_parser(language,file_in_wiktionary,wiktionary_out)
+                        english_xml_parser("English",file_in_wiktionary,wiktionary_out)
             else:
                 for filename in tqdm(os.listdir(path + "by_entry/")): # \ for Windows, / for Linux
                     with open(path + "by_entry/" + filename, mode = "r", encoding = "utf-8") as file_in_wiktionary:
-                        english_xml_parser(language,file_in_wiktionary,wiktionary_out)
+                        english_xml_parser("English",file_in_wiktionary,wiktionary_out)
             print("Processing data from German wiktionary...")
             with open("english_from_german_dump.xml",mode="r",encoding="utf-8") as g:
-                german_xml_parser(language,g,wiktionary_out,entries=dict(),n=n)
+                german_xml_parser("English",g,wiktionary_out,entries=dict(),n=n)
             print("Processing data from Spanish wiktionary...")
             with open("english_from_spanish_dump.xml",mode="r",encoding="utf-8") as s:
-                spanish_xml_parser(language,s,wiktionary_out,n)
+                spanish_xml_parser("English",s,wiktionary_out,n)
     elif language.lower() == "german":
         # path to data
         if win:
@@ -91,10 +91,10 @@ if sys.argv[1]:
                         spanish_xml_parser("Spanish",file_in_wiktionary,wiktionary_out,n)
             print("Processing data from English wiktionary...")
             with open("spanish_from_english_dump.xml",encoding="utf-8") as e:
-                english_xml_parser(language,e,wiktionary_out)
+                english_xml_parser("Spanish",e,wiktionary_out)
             print("Processing data from German wiktionary...")
             with open("spanish_from_german_dump.xml",encoding="utf-8") as g:
-                german_xml_parser(language,g,wiktionary_out,entries=dict(),n=n)
+                german_xml_parser("Spanish",g,wiktionary_out,entries=dict(),n=n)
     else:
         print("Invalid argument.")
         sys.exit()
