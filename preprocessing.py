@@ -110,14 +110,26 @@ def find_sets(entry_dict):
 
 if __name__ == "__main__":
     language = input("Choose a language: German/Spanish/English \n ")
-    if language.lower() == "german":
-        filename = "german_wiktionary\\wiktionaries\\dewiktionary-new.txt"
-    elif language.lower() == "english":
-        filename = "english_wiktionary\\wiktionaries\\enwiktionary-new.txt"
-    elif language.lower() == "spanish":
-        filename = "spanish_wiktionary\\wiktionaries\\eswiktionary-new.txt"
+    if "win" in sys.platform:
+        if language.lower() == "german":
+            filename = "german_wiktionary\\wiktionaries\\dewiktionary-new.txt"
+        elif language.lower() == "english":
+            filename = "english_wiktionary\\wiktionaries\\enwiktionary-new.txt"
+        elif language.lower() == "spanish":
+            filename = "spanish_wiktionary\\wiktionaries\\eswiktionary-new.txt"
+        else:
+            sys.exit()
+    elif "linux" in sys.platform:
+        if language.lower() == "german":
+        filename = "german_wiktionary/wiktionaries/dewiktionary-new.txt"
+        elif language.lower() == "english":
+            filename = "english_wiktionary/wiktionaries/enwiktionary-new.txt"
+        elif language.lower() == "spanish":
+            filename = "spanish_wiktionary/wiktionaries/eswiktionary-new.txt"
+        else:
+            sys.exit()
     else:
-        sys.exit()
+        print(sys.platform," is not supported.")
     print("Reading file...")
     entry_dict = read_files(filename)
     print("Finding relevant data...")

@@ -181,21 +181,32 @@ def write_files(language,path,filename,tokenizer,model,mode):
 
 if __name__ == "__main__":
     language = sys.argv[2]
-    if language.lower() == "english":
-        path = "english_wiktionary\\wiktionaries\\"
-        filename = path + "enwiktionary-new.txt"
-        outpath = "english_wiktionary\\"
-    elif language.lower() == "german":
-        path = "german_wiktionary\\wiktionaries\\"
-        filename = path + "dewiktionary-new.txt"
-        outpath = "german_wiktionary\\"
-    elif language.lower() == "spanish":
-        path = "spanish_wiktionary\\wiktionaries\\"
-        filename = path + "eswiktionary-new.txt"
-        outpath = "spanish_wiktionary\\"
+    if "win" in sys.platform:
+        if language.lower() == "german":
+            filename = "german_wiktionary\\wiktionaries\\dewiktionary-new.txt"
+            outpath = "german_wiktionary\\"
+        elif language.lower() == "english":
+            filename = "english_wiktionary\\wiktionaries\\enwiktionary-new.txt"
+            outpath = "english_wiktionary\\"
+        elif language.lower() == "spanish":
+            filename = "spanish_wiktionary\\wiktionaries\\eswiktionary-new.txt"
+            outpath = "spanish_wiktionary\\"
+        else:
+            sys.exit()
+    elif "linux" in sys.platform:
+        if language.lower() == "german":
+            filename = "german_wiktionary/wiktionaries/dewiktionary-new.txt"
+            outpath = "german_wiktionary/"
+        elif language.lower() == "english":
+            filename = "english_wiktionary/wiktionaries/enwiktionary-new.txt"
+            outpath = "english_wiktionary/"
+        elif language.lower() == "spanish":
+            filename = "spanish_wiktionary/wiktionaries/eswiktionary-new.txt"
+            outpath = "spanish_wiktionary/"
+        else:
+            sys.exit()
     else:
-        print(language, " not available.")
-        sys.exit()
+        print(sys.platform," is not supported.")
     # Load tokenizer
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
     # Load pre-trained model (weights)
