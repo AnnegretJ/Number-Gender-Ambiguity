@@ -93,7 +93,7 @@ def spanish_xml_parser(language,infile,outfile,n):
                             # we are talking about the text-part containing the languages, not the one containing information on flection
                             text_wiki = element.text
                             if text_wiki: # when there is any text in this part of the tree
-                                if "leng=es" in text_wiki or "leng=de" in text_wiki or "leng_en" in text_wiki: # find the spanish-section
+                                if "leng=es" in text_wiki or "leng=de" in text_wiki or "leng=en" in text_wiki: # find the spanish-section
                                     for textbit in text_wiki.split('\n\n'):
                                         if "=== {{sustantivo" in textbit: # when it's a noun
                                             write_file(language,title,outfile,textbit)
