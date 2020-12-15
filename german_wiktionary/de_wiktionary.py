@@ -1,6 +1,5 @@
 import os
 
-# -*- coding: utf-8 -*-
 """
 Last Updated on Nov 12 17:31 2020
 
