@@ -183,24 +183,30 @@ if __name__ == "__main__":
         if language.lower() == "german":
             filename = "german_wiktionary\\wiktionaries\\dewiktionary-new.txt"
             outpath = "german_wiktionary\\"
+            model = BertModel.from_pretrained('bert-base-multilingual-uncased')
         elif language.lower() == "english":
             filename = "english_wiktionary\\wiktionaries\\enwiktionary-new.txt"
             outpath = "english_wiktionary\\"
+            model = BertModel.from_pretrained('bert-base-uncased')
         elif language.lower() == "spanish":
             filename = "spanish_wiktionary\\wiktionaries\\eswiktionary-new.txt"
             outpath = "spanish_wiktionary\\"
+            model = BertModel.from_pretrained('bert-base-multilingual-uncased')
         else:
             sys.exit()
     elif "linux" in sys.platform:
         if language.lower() == "german":
             filename = "german_wiktionary/wiktionaries/dewiktionary-new.txt"
             outpath = "german_wiktionary/"
+            model = BertModel.from_pretrained('bert-base-multilingual-uncased')
         elif language.lower() == "english":
             filename = "english_wiktionary/wiktionaries/enwiktionary-new.txt"
             outpath = "english_wiktionary/"
+            model = BertModel.from_pretrained('bert-base-uncased')
         elif language.lower() == "spanish":
             filename = "spanish_wiktionary/wiktionaries/eswiktionary-new.txt"
             outpath = "spanish_wiktionary/"
+            model = BertModel.from_pretrained('bert-base-multilingual-uncased')
         else:
             sys.exit()
     else:
@@ -208,6 +214,5 @@ if __name__ == "__main__":
     # Load tokenizer
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
     # Load pre-trained model (weights)
-    model = BertModel.from_pretrained('bert-base-uncased')
     write_files(language,outpath,filename,tokenizer,model)
     
