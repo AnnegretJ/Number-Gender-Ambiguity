@@ -98,14 +98,10 @@ def find_sets(entry_dict):
             gender = entry_dict[title]["gender"]
             if len(gender) > 1:
                 gender_list.append(title)
-        try:
-            if title not in gender_list: # if title has no gender-ambiguity
-                for item in number_pairs: 
-                    if title in item:
-                        raise KeyError # when title has number-ambiguity, we don't need it here
-                others.append(title)# only continues here when title has no gender- or number-ambiguity
-        except KeyError:
-            continue
+        if title not in gender_list: # if title has no gender-ambiguity
+            if any([title in item for item in number_pairs]): 
+                continue # when title has number-ambiguity, we don't need it here
+            others.append(title)# only continues here when title has no gender- or number-ambiguity
     return (number_pairs,gender_list,others)
 
 if __name__ == "__main__":
@@ -134,3 +130,6 @@ if __name__ == "__main__":
     entry_dict = read_files(filename)
     print("Finding relevant data...")
     (number_pairs,gender_list,others) = find_sets(entry_dict)
+    # print(number_pairs)
+    # print(gender_list)
+    # print(others)

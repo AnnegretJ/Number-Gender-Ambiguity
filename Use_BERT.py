@@ -88,7 +88,7 @@ def run_BERT(word,tokenizer ,text, model):
     return (vec_word,sentence_embedding)
 
 def process_number(relevant_pairs,entry_dict,model,tokenizer,frame):
-    print("Calculating embeddings...")
+    print("Calculating number-ambiguity embeddings...")
     for (singular,plural) in tqdm(relevant_pairs):
         word_examples = entry_dict[singular]["examples"]
         plural_examples = entry_dict[plural]["examples"]
@@ -115,7 +115,7 @@ def process_number(relevant_pairs,entry_dict,model,tokenizer,frame):
     return frame
 
 def process_gender(language,gender_list,entry_dict,model,tokenizer,frame):
-    print("Calculating embeddings...")
+    print("Calculating gender-ambiguity embeddings...")
     for item in tqdm(gender_list):
         examples = entry_dict[item]["examples"]
         gender = entry_dict[item]["gender"]
@@ -130,7 +130,7 @@ def process_gender(language,gender_list,entry_dict,model,tokenizer,frame):
                     marked_text = get_marked_text_from_examples(sentence)
                     if item in marked_text.split():
                         (word_vector,sentence_embedding) = run_BERT(item,tokenizer,marked_text,model)
-                    elif language == "German" and any([f in marked_text.split() for f in flections]):
+                    elif language.lower() == "german" and any([f in marked_text.split() for f in flections]):
                         for f in flections:
                             if f in marked_text.split():
                                 (word_vector,sentence_embedding) = run_BERT(f,tokenizer,marked_text,model)
@@ -141,8 +141,10 @@ def process_gender(language,gender_list,entry_dict,model,tokenizer,frame):
     return frame
 
 def process_other(other,entry_dict,model,tokenizer,frame):
-    print("Calculating embeddings...")
+    print("Calculating non-ambiguity embeddings...")
     for item in tqdm(other):
+        # print(item)
+        # print(entry_dict.keys())
         examples = entry_dict[item]["examples"]
         senses = entry_dict[item]["senses"]
         for index in senses.keys():
@@ -159,18 +161,19 @@ def process_other(other,entry_dict,model,tokenizer,frame):
 def write_files(language,path,filename,tokenizer,model):
     print("Reading file...")
     entry_dict = read_files(filename)
-    print(len(entry_dict.keys()))
     print("Getting data...")
     relevant_pairs,gender_list,other = find_sets(entry_dict)
-    frame = pd.DataFrame(columns=["Word", "Number", "Gender", "Sense", "Sentence", "Word Vector", "Sentence Vector"])
-    number = process_number(relevant_pairs,entry_dict,model,tokenizer,frame)
+    number = pd.DataFrame(columns=["Word", "Number", "Gender", "Sense", "Sentence", "Word Vector", "Sentence Vector"])
+    number = process_number(relevant_pairs,entry_dict,model,tokenizer,number)
     number.to_csv(path + "number.csv",sep="\t")
     number.to_pickle(path + "number.pkl")
-    other = process_other(other,entry_dict,model,tokenizer,frame)
-    other.to_csv(path + "other.csv",sep="\t")
-    other.to_pickle(path + "other.pkl")
+    no_ambiguity = pd.DataFrame(columns=["Word", "Number", "Gender", "Sense", "Sentence", "Word Vector", "Sentence Vector"])
+    no_ambiguity = process_other(other,entry_dict,model,tokenizer,no_ambiguity)
+    no_ambiguity.to_csv(path + "other.csv",sep="\t")
+    no_ambiguity.to_pickle(path + "other.pkl")
     if language.lower() != "english":
-        gender = process_gender(language,gender_list,entry_dict,model,tokenizer,frame)
+        gender = pd.DataFrame(columns=["Word", "Number", "Gender", "Sense", "Sentence", "Word Vector", "Sentence Vector"])
+        gender = process_gender(language,gender_list,entry_dict,model,tokenizer,gender)
         gender.to_csv(path + "gender.csv", sep="\t")
         gender.to_pickle(path + "gender.pkl")
 

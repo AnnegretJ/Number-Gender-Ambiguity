@@ -8,13 +8,13 @@ import time
 
 start = time.time()
 if len(sys.argv) >= 2:
-    if sys.argv[1] in ["German","English","Spanish"]:
-        language = sys.argv[1]
+    if sys.argv[1].lower() in ["german","english","spanish"]:
+        language = sys.argv[1].lower()
         if len(sys.argv) >= 3:
             path = ""
             original = sys.argv[2]
         else:
-            if language == "German":
+            if language == "german":
                 try:
                     if "linux" in sys.platform:
                         path = "german_wiktionary/wiktionaries/"
@@ -27,7 +27,7 @@ if len(sys.argv) >= 2:
                 except FileNotFoundError:
                     print("Please specify a path.")
                     sys.exit()
-            elif language == "English":
+            elif language == "english":
                 try:
                     if "linux" in sys.platform:
                         path = "english_wiktionary/wiktionaries/"
@@ -40,7 +40,7 @@ if len(sys.argv) >= 2:
                 except FileNotFoundError:
                     print("Please specify a path.")
                     sys.exit()
-            elif language == "Spanish":
+            elif language == "spanish":
                 try:
                     if "linux" in sys.platform:
                         path + "spanish_wiktionary/wiktionaries/"
@@ -67,7 +67,7 @@ if "win" in sys.platform:
 else:
     win = False
 n = 1
-if language == "German":
+if language == "german":
     child_language_pattern = re.compile(r"\(\{\{Sprache\|(.*?)\}\}\)")
     # ({{Sprache|Latein}}) ==
     context = ET.iterparse(original, events=('end', ))
@@ -134,7 +134,7 @@ if language == "German":
             print(str(n) + " new files")
             e.write(b"</mediawiki>")
         s.write(b"</mediawiki>")
-elif language == "English":
+elif language == "english":
     child_language_pattern = re.compile(r"\}\}\n==(.*?)==")
     context = ET.iterparse(original, events=("end", ))
     with open("spanish_from_english_dump.xml","wb") as s:
@@ -181,7 +181,7 @@ elif language == "English":
                                         for grandchild in child:
                                             if grandchild.tag == "{http://www.mediawiki.org/xml/export-0.10/}text" and grandchild.text != None:
                                                 if child_language_pattern.search(grandchild.text):
-                                                    if child_language_pattern.search(grandchild.text).group(1) != language:
+                                                    if child_language_pattern.search(grandchild.text).group(1) != "English":
                                                         if child_language_pattern.search(grandchild.text).group(1) == "Spanish":
                                                             s.write( b"\n<page>\n" + ET.tostring(elem) + b"</page>\n")
                                                             elem.clear()
@@ -205,7 +205,7 @@ elif language == "English":
             print(str(n) + " new files")
             g.write(b"</mediawiki>")
         s.write(b"</mediawiki>")
-elif language == "Spanish":
+elif language == "spanish":
     child_language_pattern = re.compile(r"== \{\{lengua\|(.*?)\}\} ==")
     context = ET.iterparse(original, events=('end', ))
     with open("german_from_spanish_dump.xml","wb") as g:
@@ -258,6 +258,10 @@ elif language == "Spanish":
                                                         g.write(b"\n<page>\n" + ET.tostring(elem) + b"</page>\n")
                                                         elem.clear()
                                                         break
+                                                    elif child_language_pattern.search(grandchild.text).group(1) == "es":
+                                                        pass # only Spanish entries will be left at the end
+                                                    else:
+                                                        break # skip entries in any other language
                                     elif child.tag == "{http://www.mediawiki.org/xml/export-0.10/}title" and ":" in child.text:
                                         child.clear()
                                         break
