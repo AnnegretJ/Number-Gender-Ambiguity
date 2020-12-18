@@ -73,7 +73,7 @@ def write_file(language,title,f,textbit):
     for (index,sense) in senses.items():
         f.write("\t\tsense " + str(index) + ": " + str(sense) + "\n")
         for (sensename,example) in examples.items():
-            if sense == sensename:
+            if index == sensename:
                 f.write("\t\t\texample "+ str(index) + ": " + str(example) + "\n")
     f.write("\n\n")
 

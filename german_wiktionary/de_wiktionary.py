@@ -103,12 +103,19 @@ def write_dict(entries,title,language):
                 entries[title][i]["examples"] = defaultdict(list)
                 field = re.sub("Beispiele}}\n","",field)
                 examples = field.split("\n")
-                for example in examples:
-                    if re_number_of.search(example):
-                        number_of = re_number_of.search(example)
-                        number = number_of.group(1)
-                        e = re.sub('<ref>.*</ref>', '', example)
-                        entries[title][i]["examples"][number].append(e)
+                n = 0
+                while n < len(examples):
+                    if len(examples[n].split()) <= 2:
+                        n += 1
+                        continue
+                    elif examples[n].startswith("="): # when the next category starts
+                        break
+                    number = examples[n][2]
+                    e = examples[n][4:]
+                    n += 1
+                    if "Beispiele fehlen" in e:
+                        continue
+                    entries[title][i]["examples"][number].append(e)
         i += 1
 
 def german_xml_parser(language,infile,outfile,entries=dict(),plurals=set(),n=0):
