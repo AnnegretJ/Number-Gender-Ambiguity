@@ -78,7 +78,7 @@ def write_dict(entries,title,language):
                         else:
                             plural = morph.split(" ",1)[-1]
                         entries[title][i]["plural"].append(plural)
-            elif language == "German" and "Worttrennung}}" in field:
+            elif "Worttrennung}}" in field:
                 infos = field.split("\n")
                 for info in infos:
                     if "Pl." in info or "Plural" in info:
