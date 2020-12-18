@@ -99,8 +99,8 @@ def start(data,wordlist):
 
             for index in visited:
                 word_vector = data["Word Vector"][index].tolist()
-                number = ["number: " + data["Number"][index]]
-                example = ["example: " + data["Sentence"][index]]
+                number = "number: " + str(data["Number"][index])
+                example = "example: " + data["Sentence"][index]
                 if index not in word_facts.keys():
                     word_facts[(word,data["Sense"][index])] = [number,example] # store facts for later
                 word_vectors[(word,data["Sense"][index])] = word_vector
@@ -117,6 +117,12 @@ def start(data,wordlist):
                 print("Invalid Input. Show examples? (Y/N) \n => ")
 
 if __name__ == "__main__":
+    if "win" in sys.platform:
+        win = True
+    elif "linux" in sys.platform:
+        win = False
+    else:
+        print(sys.platform, " is not supported.")
     category = sys.argv
     if len(category) > 3:
         print("Too many arguments.")
@@ -127,20 +133,31 @@ if __name__ == "__main__":
     else:
         item = category[1] # first item is file name
         language = category[2]
-        if language.lower() == "english":
-            path = "english_wiktionary\\"
-        elif language.lower() == "german":
-            path = "german_wiktionary\\"
-        elif language.lower() == "spanish":
-            path = "spanish_wiktionary\\"
+        if win:
+            if language.lower() == "english":
+                path = "english_wiktionary\\"
+            elif language.lower() == "german":
+                path = "german_wiktionary\\"
+            elif language.lower() == "spanish":
+                path = "spanish_wiktionary\\"
+            else:
+                print("Language not found.")
+                exit()
         else:
-            print("Language not found.")
-            exit()
+            if language.lower() == "english":
+                path = "english_wiktionary/"
+            elif language.lower() == "german":
+                path = "german_wiktionary/"
+            elif language.lower() == "spanish":
+                path = "spanish_wiktionary/"
+            else:
+                print("Language not found.")
+                exit()
         if item == "-n": # for number-ambiguity
             filename = path + "number.pkl"
             data = read_files(filename)
         elif item == "-g" and language.lower() != "english":
-            filename = path + "number.pkl"
+            filename = path + "gender.pkl"
             data = read_files(filename)
         elif item == "-ng" and language.lower() != "english":
             first = path + "number.pkl"

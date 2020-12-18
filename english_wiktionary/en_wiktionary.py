@@ -178,7 +178,7 @@ def write_file(language,title,filename,cat):
             else:
                 tool = language_check.LanguageTool("en-US") # create the tool for grammar-checking the adjusted examples
                 new_example = replace_words_in_examples_new(title,example,tool)
-                filename.write("\t\t\texamples" + str(counter) + ": " + str(example) + "\n")
+        filename.write("\t\t\texamples" + str(counter) + ": " + str(examples) + "\n")
         counter += 1
     filename.write("\n\n")     
 

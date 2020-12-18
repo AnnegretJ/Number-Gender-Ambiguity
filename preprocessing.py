@@ -58,28 +58,24 @@ def read_files(filename):
                 examples = line[len("\t\t\texample(s)" + index + ": "):]
                 examples = eval(examples)
                 if examples != []:
-                    for item in examples:
-                        x = item.split("] ",1)
-                        if len(x) >= 2:
-                            sense = x[0][-1]
-                            sentence = x[1]
-                            # punctuation and "" attached to a word can lead to not finding the word in this sentence
-                            sentence = sentence.translate(str.maketrans('', '', string.punctuation)) # remove all punctuation
-                            sentence = sentence.translate(str.maketrans("","",'“')) # remove "
-                            sentence = sentence.translate(str.maketrans("","",'„'))
-                            sentence = sentence.translate(str.maketrans("","","»"))
-                            sentence = sentence.translate(str.maketrans("","","«"))
-                            sentence = sentence.translate(str.maketrans("","","‘"))
-                            sentence = sentence.translate(str.maketrans("","","‚"))
-                            if sentence.startswith("Beispiele fehlen"): # can occur in German data
-                                continue
-                            elif title in sentence.split():
-                                entry_dict[title]["examples"][index].add(sentence)
-                            elif "flection" in entry_dict[title].keys():
-                                for item in entry_dict[title]["flection"]:
-                                    if item in sentence:
-                                        entry_dict[title]["examples"][index].add(sentence)
-                                        break
+                    for sentence in examples:
+                        # punctuation and "" attached to a word can lead to not finding the word in this sentence
+                        sentence = sentence.translate(str.maketrans('', '', string.punctuation)) # remove all punctuation
+                        sentence = sentence.translate(str.maketrans("","",'“')) # remove "
+                        sentence = sentence.translate(str.maketrans("","",'„'))
+                        sentence = sentence.translate(str.maketrans("","","»"))
+                        sentence = sentence.translate(str.maketrans("","","«"))
+                        sentence = sentence.translate(str.maketrans("","","‘"))
+                        sentence = sentence.translate(str.maketrans("","","‚"))
+                        if sentence.startswith("Beispiele fehlen"):
+                            continue
+                        elif title in sentence.split():
+                            entry_dict[title]["examples"][index].add(sentence)
+                        elif "flection" in entry_dict[title].keys():
+                            for item in entry_dict[title]["flection"]:
+                                if item in sentence:
+                                    entry_dict[title]["examples"][index].add(sentence)
+                                    break
     return entry_dict
 
 def find_sets(entry_dict):
