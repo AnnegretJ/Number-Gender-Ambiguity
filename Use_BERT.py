@@ -94,24 +94,39 @@ def process_number(relevant_pairs,entry_dict,model,tokenizer,frame):
         plural_examples = entry_dict[plural]["examples"]
         word_senses = entry_dict[singular]["senses"]
         plural_senses = entry_dict[plural]["senses"]
-        for w_index in word_senses.keys():
-            sense = word_senses[w_index]
-            for example in word_examples[w_index]:
-                marked_text = get_marked_text_from_examples(example)
-                if singular in marked_text.split():
-                    (word_vector,sentence_embedding) = run_BERT(singular,tokenizer,marked_text,model)
-                else:
-                    continue
-                frame = frame.append({"Word":singular,"Number":"Sg","Sense":sense,"Sentence":example,"Word Vector": word_vector, "Sentence Vector": sentence_embedding},ignore_index=True)
-        for p_index in plural_senses.keys():
-            sense = plural_senses[p_index]
-            for example in plural_examples[p_index]:
-                marked_text = get_marked_text_from_examples(example)
-                if plural in marked_text.split():
-                    (word_vector,sentence_embedding) = run_BERT(plural,tokenizer,marked_text,model)
-                else:
-                    continue
-                frame = frame.append({"Word":plural,"Number":"Pl","Sense":sense,"Sentence":example,"Word Vector": word_vector, "Sentence Vector": sentence_embedding},ignore_index=True)
+        if language.lower() == "german": # because flections are only saved for German by now
+            sg_flections = entry_dict[singular]["flection"]
+            pl_flections = entry_dict[plural]["flection"]
+        for key in word_senses.keys():
+            for w_index in word_senses[key].keys():
+                sense = word_senses[key][w_index]
+                for example in word_examples[w_index]:
+                    marked_text = get_marked_text_from_examples(example)
+                    if singular in marked_text.split():
+                        (word_vector,sentence_embedding) = run_BERT(singular,tokenizer,marked_text,model)
+                    elif language.lower() == "german" and any([f in marked_text.split() for f in sg_flections]):
+                        for f in sg_flections:
+                            if f in marked_text.split():
+                                (word_vector,sentence_embedding) = run_BERT(f,tokenizer,marked_text,model)
+                                break
+                    else:
+                        continue
+                    frame = frame.append({"Word":singular,"Number":"Sg","Sense":sense,"Sentence":example,"Word Vector": word_vector, "Sentence Vector": sentence_embedding},ignore_index=True)
+        for p_key in plural_senses.keys():
+            for p_index in plural_senses[p_key].keys():
+                sense = plural_senses[p_key][p_index]
+                for example in plural_examples[p_index]:
+                    marked_text = get_marked_text_from_examples(example)
+                    if plural in marked_text.split():
+                        (word_vector,sentence_embedding) = run_BERT(plural,tokenizer,marked_text,model)
+                    elif language.lower() == "german" and any([f in marked_text.split() for f in pl_flections]):
+                        for f in pl_flections:
+                            if f in marked_text.split():
+                                (word_vector,sentence_embedding) = run_BERT(f,tokenizer,marked_text,model)
+                                break
+                    else:
+                        continue
+                    frame = frame.append({"Word":plural,"Number":"Pl","Sense":sense,"Sentence":example,"Word Vector": word_vector, "Sentence Vector": sentence_embedding},ignore_index=True)
     return frame
 
 def process_gender(language,gender_list,entry_dict,model,tokenizer,frame):
@@ -147,15 +162,23 @@ def process_other(other,entry_dict,model,tokenizer,frame):
         # print(entry_dict.keys())
         examples = entry_dict[item]["examples"]
         senses = entry_dict[item]["senses"]
-        for index in senses.keys():
-            sense = senses[index]
-            for example in examples[index]:
-                marked_text = get_marked_text_from_examples(example)
-                if item in marked_text.split():
-                    (word_vector,sentence_embedding) = run_BERT(item,tokenizer,marked_text,model)
-                else:
-                    continue
-                frame = frame.append({"Word":item,"Sense":sense,"Sentence":example,"Word Vector":word_vector,"Sentence Vector":sentence_embedding},ignore_index=True)
+        if language.lower() == "german": # because flections are only saved for German by now
+            flections = entry_dict[item]["flection"]
+        for key in senses.keys():
+            for index in senses[key].keys():
+                sense = senses[key][index]
+                for example in examples[index]:
+                    marked_text = get_marked_text_from_examples(example)
+                    if item in marked_text.split():
+                        (word_vector,sentence_embedding) = run_BERT(item,tokenizer,marked_text,model)
+                    elif language.lower() == "german" and any([f in marked_text.split() for f in flections]):
+                        for f in flections:
+                            if f in marked_text.split():
+                                (word_vector,sentence_embedding) = run_BERT(f,tokenizer,marked_text,model)
+                                break
+                    else:
+                        continue
+                    frame = frame.append({"Word":item,"Sense":sense,"Sentence":example,"Word Vector":word_vector,"Sentence Vector":sentence_embedding},ignore_index=True)
     return frame
 
 def write_files(language,path,filename,tokenizer,model):
