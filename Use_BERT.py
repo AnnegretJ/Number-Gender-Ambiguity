@@ -168,6 +168,7 @@ def process_other(other,entry_dict,model,tokenizer,frame):
             for index in senses[key].keys():
                 sense = senses[key][index]
                 for example in examples[index]:
+                    print(title in example)
                     marked_text = get_marked_text_from_examples(example)
                     if item in marked_text.split():
                         (word_vector,sentence_embedding) = run_BERT(item,tokenizer,marked_text,model)
@@ -207,14 +208,17 @@ if __name__ == "__main__":
             filename = "german_wiktionary\\wiktionaries\\dewiktionary-new.txt"
             outpath = "german_wiktionary\\"
             model = BertModel.from_pretrained('bert-base-multilingual-uncased')
+            tokenizer = BertTokenizer.from_pretrained('bert-base-multilingual-uncased')
         elif language.lower() == "english":
             filename = "english_wiktionary\\wiktionaries\\enwiktionary-new.txt"
             outpath = "english_wiktionary\\"
             model = BertModel.from_pretrained('bert-base-uncased')
+            tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         elif language.lower() == "spanish":
             filename = "spanish_wiktionary\\wiktionaries\\eswiktionary-new.txt"
             outpath = "spanish_wiktionary\\"
             model = BertModel.from_pretrained('bert-base-multilingual-uncased')
+            tokenizer = BertTokenizer.from_pretrained('bert-base-multilingual-uncased')
         else:
             sys.exit()
     elif "linux" in sys.platform:
@@ -222,20 +226,23 @@ if __name__ == "__main__":
             filename = "german_wiktionary/wiktionaries/dewiktionary-new.txt"
             outpath = "german_wiktionary/"
             model = BertModel.from_pretrained('bert-base-multilingual-uncased')
+            tokenizer = BertTokenizer.from_pretrained('bert-base-multilingual-uncased')
         elif language.lower() == "english":
             filename = "english_wiktionary/wiktionaries/enwiktionary-new.txt"
             outpath = "english_wiktionary/"
             model = BertModel.from_pretrained('bert-base-uncased')
+            tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         elif language.lower() == "spanish":
             filename = "spanish_wiktionary/wiktionaries/eswiktionary-new.txt"
             outpath = "spanish_wiktionary/"
             model = BertModel.from_pretrained('bert-base-multilingual-uncased')
+            tokenizer = BertTokenizer.from_pretrained('bert-base-multilingual-uncased')
         else:
             sys.exit()
     else:
         print(sys.platform," is not supported.")
     # Load tokenizer
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+    
     # Load pre-trained model (weights)
     write_files(language,outpath,filename,tokenizer,model)
     
