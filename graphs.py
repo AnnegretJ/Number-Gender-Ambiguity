@@ -26,6 +26,7 @@ def tsne_plot(model,facts,show_examples=False): # word,sense - vector
             except KeyError:
                 handles.append(sense)
     tsne_model = TSNE(perplexity=40, n_components=3, init='pca', n_iter=2500, random_state=23,)
+    print(tokens)
     new_values = tsne_model.fit_transform(tokens)
     x = []
     y = []
@@ -69,7 +70,7 @@ def read_files(file_1,file_2=None,file_3=None):
 def start(data,wordlist):
     word_vectors = dict()
     word_facts = dict()
-    data = data.dropna(subset=['Word Vector', 'Sentence Vector']) # remove all rows that contain nan in word vector or sentence vector
+    data = data.dropna(subset=['Word Vector']) # remove all rows that contain nan in word vector or sentence vector
     data = data.reset_index(drop=True)
     for word in wordlist:
         word_not_found = True # set to False when word is found
@@ -185,6 +186,7 @@ if __name__ == "__main__":
         else:
             print("Invalid argument: " + item)
             exit()
+    print(type(data))
     words = input("Which words do you want to see comparisons of? (Multiple words separated by whitespace) => ")
     wordlist = words.split() # get individual words
     start(data,wordlist)
