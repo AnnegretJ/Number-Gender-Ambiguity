@@ -26,8 +26,10 @@ def tsne_plot(model,facts,show_examples=False): # word,sense - vector
             except KeyError:
                 handles.append(sense)
     tsne_model = TSNE(perplexity=40, n_components=3, init='pca', n_iter=2500, random_state=23,)
-    print(tokens)
-    new_values = tsne_model.fit_transform(tokens)
+    if len(tokens) > 1:
+        new_values = tsne_model.fit_transform(tokens)
+    else:
+        new_values = tokens # this occurs when there is only one point to be presented
     x = []
     y = []
     z = []
@@ -38,7 +40,8 @@ def tsne_plot(model,facts,show_examples=False): # word,sense - vector
     fig = plt.figure()
     ax = fig.add_subplot(111,projection="3d")
     c = list(range(len(x)))
-    scatter = ax.scatter(x,y,z, c=c)
+    # use colormap without faded colors (more useful for 2-dimensional view of 3-dimensional plots)
+    scatter = ax.scatter(x,y,z, c=c, cmap='Set1')
     for i in range(len(x)):
         ax.annotate(labels[i],
                      xy=(x[i], y[i]),
@@ -186,7 +189,6 @@ if __name__ == "__main__":
         else:
             print("Invalid argument: " + item)
             exit()
-    print(type(data))
     words = input("Which words do you want to see comparisons of? (Multiple words separated by whitespace) => ")
     wordlist = words.split() # get individual words
     start(data,wordlist)

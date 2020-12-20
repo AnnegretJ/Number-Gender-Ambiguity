@@ -17,6 +17,7 @@ def read_files(filename):
                     entry_dict[title] = defaultdict(set)
                     entry_dict[title]["examples"] = defaultdict(set)
                     entry_dict[title]["senses"] = dict()
+                    entry_dict[title]["gender"] = []
             elif line.startswith("\tgender: ") and title in entry_dict.keys(): # German and Spanish only
                 genus = line[len("\tgender: "):]
                 genus = eval(genus)
@@ -38,19 +39,18 @@ def read_files(filename):
                 index = line[len("\t\tsense"):][0]
                 sense = line[len("\t\tsense" + index + ": "):]
                 try:
-                    if "gender" in entry_dict[title].keys(): # for Spansísh and German
-                        gender = entry_dict[title]["gender"]
-                        if gender == [] or gender == ["0"]: # when there is no gender given
-                            if "-" not in entry_dict[title]["senses"].keys(): # when there is a sense given
-                                entry_dict[title]["senses"]["-"] = dict()
-                            entry_dict[title]["senses"]["-"][str(index)] = sense
-                        else:
-                            for item in gender:
-                                entry_dict[title]["senses"][item][str(index)] = sense # sort senses by current gender and index
-                    else: # for English and for words without gender
-                        if "-" not in entry_dict[title]["senses"].keys():
+                    gender = entry_dict[title]["gender"]
+                    if gender == [] or gender == ["0"]: # when there is no gender given
+                        if "-" not in entry_dict[title]["senses"].keys(): # when there is a sense given
                             entry_dict[title]["senses"]["-"] = dict()
                         entry_dict[title]["senses"]["-"][str(index)] = sense
+                    else:
+                        for item in gender:
+                            entry_dict[title]["senses"][item][str(index)] = sense # sort senses by current gender and index
+                # else: # for English and for words without gender
+                #     if "-" not in entry_dict[title]["senses"].keys():
+                #         entry_dict[title]["senses"]["-"] = dict()
+                #     entry_dict[title]["senses"]["-"][str(index)] = sense
                 except IndexError:
                     continue
             elif line.startswith("\t\t\texample(s)") and title in entry_dict.keys():
