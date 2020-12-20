@@ -7,6 +7,10 @@ from tqdm import tqdm
 def read_files(filename):
     with open(filename,mode="r",encoding="utf-8") as data:
         entry_dict = dict()
+        # options on how gender is written
+        m_genus = ["m","masculine","maskulin","masculino"]
+        f_genus = ["f","feminine","feminin","feminino"]
+        n_genus = ["n","neuter","neutrum","neutro"]
         for line in tqdm(data):
             if line.startswith("title: "):
                 title = line[len("title: "):]
@@ -21,6 +25,13 @@ def read_files(filename):
             elif line.startswith("\tgender: ") and title in entry_dict.keys(): # German and Spanish only
                 genus = line[len("\tgender: "):]
                 genus = eval(genus)
+                # make sure all data uses the same string for genus (to avoid doubled entries)
+                if genus in m_genus:
+                    genus = "m"
+                elif genus in f_genus:
+                    genus = "f"
+                elif genus in n_genus:
+                    genus = "n"
                 for item in genus:
                     if item not in entry_dict[title]["senses"].keys():
                         entry_dict[title]["senses"][item] = dict()

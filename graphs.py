@@ -13,18 +13,18 @@ def tsne_plot(model,facts,show_examples=False): # word,sense - vector
     tokens = []
     handles = []
     for (word,sense) in model.keys():
-        tokens.append(model[(word,sense)])
+        tokens.append(model[(word,sense)]) # embedding-vectors
         labels.append(word)
         if show_examples:
             try:
                 handles.append(str(word) + " " + str(sense) + str(facts[(word,sense)][0]) + str(facts[(word,sense)][1]))
             except KeyError:
-                handles.append(sense)
+                handles.append(str(word) + " " + str(sense))
         else:
             try:
                 handles.append(str(word) + " " + str(sense) + str(facts[(word,sense)][0]))
             except KeyError:
-                handles.append(sense)
+                handles.append(str(word) + " " + str(sense))
     tsne_model = TSNE(perplexity=40, n_components=3, init='pca', n_iter=2500, random_state=23,)
     if len(tokens) > 1:
         new_values = tsne_model.fit_transform(tokens)
@@ -58,14 +58,29 @@ def tsne_plot(model,facts,show_examples=False): # word,sense - vector
     plt.show()
 
 
-def read_files(file_1,file_2=None,file_3=None):
-    data = pd.read_pickle(file_1)
+def read_files(file_1,mode_1="pkl",file_2=None,mode_2="pkl",file_3=None,mode_3="pkl"):
+    if mode_1 == "pkl":
+        data = pd.read_pickle(file_1)
+    elif mode_1 == "csv":
+        data = pd.read_csv(file_1)
+    else:
+        print("Unsupported mode for file_1: ", mode_1)
     if file_2 != None:
-        second = pd.read_pickle(file_2)
+        if mode_2 == "pkl":
+            second = pd.read_pickle(file_2)
+        elif mode_2 == "csv":
+            second = pd.read_csv(file_2)
+        else:
+            print("Unsupported mode for file_2: ", mode_2)
         data = pd.merge(data,second,how="outer")
         data = data.reset_index()
     if file_3 != None:
-        third = pd.read_pickle(file_3)
+        if mode_3 == "pkl":
+            third = pd.read_pickle(file_3)
+        elif mode_3 == "csv":
+            third = pd.read_csv(file_3)
+        else:
+            print("Unsupported mode for file_3: ", mode_3)
         data = pd.merge(data,third,how="outer")
         data = data.reset_index()
     return data
@@ -100,14 +115,12 @@ def start(data,wordlist):
                     visited.append(i) # store the index of this entry
                     continue
             print(str(len(visited)) + " entries found for " + word)
-
-            for index in visited:
-                word_vector = data["Word Vector"][index].tolist()
-                number = "number: " + str(data["Number"][index])
-                example = "example: " + data["Sentence"][index]
-                if index not in word_facts.keys():
-                    word_facts[(word,data["Sense"][index])] = [number,example] # store facts for later
-                word_vectors[(word,data["Sense"][index])] = word_vector
+        for index in visited:
+            word_vector = data["Word Vector"][index].tolist()
+            number = "number: " + str(data["Number"][index])
+            example = "example: " + data["Sentence"][index]
+            word_facts[(word,data["Sense"][index])] = [number,example] # store facts for later
+            word_vectors[(word,data["Sense"][index])] = word_vector
     if len(word_vectors.keys()) != 0:
         answer = input("Show examples in legend? (Y/N) \n => ")
         while answer:
@@ -137,6 +150,9 @@ if __name__ == "__main__":
     else:
         item = category[1] # first item is file name
         language = category[2]
+        mode_1 = "pkl"
+        mode_2 = "pkl"
+        mode_3 = "pkl"
         if win:
             if language.lower() == "english":
                 path = "english_wiktionary\\"
@@ -158,34 +174,82 @@ if __name__ == "__main__":
                 print("Language not found.")
                 exit()
         if item == "-n": # for number-ambiguity
-            filename = path + "number.pkl"
-            data = read_files(filename)
+            try:
+                filename = path + "number.pkl"
+            except FileNotFoundError:
+                filename = path + "number.csv"
+                mode_1 = "csv"
+            data = read_files(filename,mode_1)
         elif item == "-g" and language.lower() != "english":
-            filename = path + "gender.pkl"
-            data = read_files(filename)
+            try:
+                filename = path + "gender.pkl"
+            except FileNotFoundError:
+                filename = path + "gender.csv"
+                mode_1 = "csv"
+            data = read_files(filename,mode_1)
         elif item == "-ng" and language.lower() != "english":
-            first = path + "number.pkl"
-            second = path + "gender.pkl"
-            data = read_files(first,second)
+            try:
+                first = path + "number.pkl"
+            except FileNotFoundError:
+                first = path + "number.csv"
+                mode_1 = "csv"
+            try:
+                second = path + "gender.pkl"
+            except FileNotFoundError:
+                second = path + "gender.csv"
+                mode_2 = "csv"
+            data = read_files(first,mode_1,second,mode_2)
         elif item == "-o": # for all data except ambiguity-types
-            filename = path + "other.pkl"
-            data = read_files(filename)
+            try:
+                filename = path + "other.pkl"
+            except FileNotFoundError:
+                filename = path + "other.csv"
+                mode_1 = "csv"
+            data = read_files(filename,mode_1)
         elif item == "-no":
-            first = path + "number.pkl"
-            second = path + "other.pkl"
-            data = read_files(first,second)
+            try:
+                first = path + "number.pkl"
+            except FileNotFoundError:
+                first = path + "number.csv"
+                mode_1 = "csv"
+            try:
+                second = path + "other.pkl"
+            except FileNotFoundError:
+                first = path + "other.csv"
+                mode_2 = "csv"
+            data = read_files(first,mode_1,second,mode_2)
         elif item == "-go" and language.lower() != "english":
-            first = path + "gender.pkl"
-            second = path + "other.pkl"
-            data = read_files(first,second)
+            try:
+                first = path + "gender.pkl"
+            except FileNotFoundError:
+                first = path + "other.csv"
+                mode_1 = "csv"
+            try:
+                second = path + "other.pkl"
+            except FileNotFoundError:
+                second = path + "other.csv"
+                mode_2 = "csv"
+            data = read_files(first,mode_1,second,mode_2)
         elif item == "-a": # for all available data
-            first = path + "number.pkl"
-            second = path + "other.pkl"
+            try:
+                first = path + "number.pkl"
+            except FileNotFoundError:
+                first = path + "number.csv"
+                mode_1 = "csv"
+            try:
+                second = path + "other.pkl"
+            except FileNotFoundError:
+                second = path + "other.csv"
+                mode_2 = "csv"
             if language.lower() == "english":
-                data = read_files(first,second)
+                data = read_files(first,mode_1,second,mode_2)
             else:
-                third = path + "gender.pkl"
-                data = read_files(first,second,third)
+                try:
+                    third = path + "gender.pkl"
+                except FileNotFoundError:
+                    third = path + "gender.csv"
+                    mode_3 = "csv"
+                data = read_files(first,mode_1,second,mode_2,third,mode_3)
         else:
             print("Invalid argument: " + item)
             exit()

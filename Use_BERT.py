@@ -168,7 +168,6 @@ def process_other(other,entry_dict,model,tokenizer,frame):
             for index in senses[key].keys():
                 sense = senses[key][index]
                 for example in examples[index]:
-                    print(title in example)
                     marked_text = get_marked_text_from_examples(example)
                     if item in marked_text.split():
                         (word_vector,sentence_embedding) = run_BERT(item,tokenizer,marked_text,model)
