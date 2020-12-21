@@ -58,10 +58,6 @@ def read_files(filename):
                     else:
                         for item in gender:
                             entry_dict[title]["senses"][item][str(index)] = sense # sort senses by current gender and index
-                # else: # for English and for words without gender
-                #     if "-" not in entry_dict[title]["senses"].keys():
-                #         entry_dict[title]["senses"]["-"] = dict()
-                #     entry_dict[title]["senses"]["-"][str(index)] = sense
                 except IndexError:
                     continue
             elif line.startswith("\t\t\texample(s)") and title in entry_dict.keys():
