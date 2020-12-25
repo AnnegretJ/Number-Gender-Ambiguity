@@ -8,9 +8,9 @@ def read_files(filename):
     with open(filename,mode="r",encoding="utf-8") as data:
         entry_dict = dict()
         # options on how gender is written
-        m_genus = ["m","masculine","maskulin","masculino"]
-        f_genus = ["f","feminine","feminin","feminino"]
-        n_genus = ["n","neuter","neutrum","neutro"]
+        m_genus = ["m","masculine","maskulin","masculino","m}}"]
+        f_genus = ["f","feminine","feminin","femenino","f}}"]
+        n_genus = ["n","neuter","neutrum","neutro","n}}"]
         for line in tqdm(data):
             if line.startswith("title: "):
                 title = line[len("title: "):]
@@ -21,18 +21,17 @@ def read_files(filename):
                     entry_dict[title] = defaultdict(set)
                     entry_dict[title]["examples"] = defaultdict(set)
                     entry_dict[title]["senses"] = dict()
-                    entry_dict[title]["gender"] = []
             elif line.startswith("\tgender: ") and title in entry_dict.keys(): # German and Spanish only
                 genus = line[len("\tgender: "):]
                 genus = eval(genus)
                 # make sure all data uses the same string for genus (to avoid doubled entries)
-                if genus in m_genus:
-                    genus = "m"
-                elif genus in f_genus:
-                    genus = "f"
-                elif genus in n_genus:
-                    genus = "n"
                 for item in genus:
+                    if item in m_genus:
+                        item = "m"
+                    elif item in f_genus:
+                        item = "f"
+                    elif item in n_genus:
+                        item = "n"
                     if item not in entry_dict[title]["senses"].keys():
                         entry_dict[title]["senses"][item] = dict()
                     entry_dict[title]["gender"].add(item)
@@ -50,13 +49,13 @@ def read_files(filename):
                 index = line[len("\t\tsense"):][0]
                 sense = line[len("\t\tsense" + index + ": "):]
                 try:
-                    gender = entry_dict[title]["gender"]
-                    if gender == [] or gender == ["0"]: # when there is no gender given
+                    all_gender = entry_dict[title]["senses"].keys()
+                    if all_gender == [] or all_gender == ["0"]: # when there is no gender given
                         if "-" not in entry_dict[title]["senses"].keys(): # when there is a sense given
                             entry_dict[title]["senses"]["-"] = dict()
                         entry_dict[title]["senses"]["-"][str(index)] = sense
                     else:
-                        for item in gender:
+                        for item in all_gender:
                             entry_dict[title]["senses"][item][str(index)] = sense # sort senses by current gender and index
                 except IndexError:
                     continue

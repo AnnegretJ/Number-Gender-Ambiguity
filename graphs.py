@@ -11,23 +11,23 @@ import numpy as np
 def tsne_plot(model,facts,show_examples=False): # word,sense - vector
     "Creates a TSNE model and plots it"
     labels = []
-    labels_averages = []
+    # labels_averages = []
     tokens = []
-    tokens_averages = []
+    # tokens_averages = []
     handles = []
-    handles_averages = []
+    # handles_averages = []
     for (word,sense) in model.keys():
-        sum_of_vectors = []
+        sum_of_vectors = np.empty(shape=len(model[(word,sense)]))
         counter = 0
         for item in model[(word,sense)]: # for every individual embedding vector
             counter += 1
-            if sum_of_vectors == []:
-                sum_of_vectors = item
-            else:
-                sum_of_vectors = np.add(sum_of_vectors,item)
-        tokens_averages.append([item/counter for item in sum_of_vectors]) # vector for all example senses in this sense
-        labels_averages.append(word) # word according to above vector
-        handles_averages.append(str(word) + " " + str(sense) + str(facts[(word,sense)][0]))
+            sum_of_vectors = np.add(sum_of_vectors,item)
+        # tokens_averages.append(np.array(sum_of_vectors)/counter) # vector for all example senses in this sense
+        tokens.append(np.array(sum_of_vectors/counter))
+        # labels_averages.append(word) # word according to above vector
+        labels.append(word)
+        # handles_averages.append(str(word) + " " + str(sense) + str(facts[(word,sense)][0]))
+        handles.append(str(word) + " " + str(sense) + str(facts[(word,sense)][0]))
         tokens.append(model[(word,sense)]) # embedding-vectors
         labels.append(word)
         if show_examples:
@@ -45,10 +45,10 @@ def tsne_plot(model,facts,show_examples=False): # word,sense - vector
         new_values = tsne_model.fit_transform(tokens)
     else:
         new_values = tokens # this occurs when there is only one point to be presented
-    if len(tokens_averages) > 1:
-        new_values_averages = tsne_model.fit_transform(tokens_averages)
-    else:
-        new_values_averages = tokens_averages
+    # if len(tokens_averages) > 1:
+    #     new_values_averages = tsne_model.fit_transform(tokens_averages)
+    # else:
+    #     new_values_averages = tokens_averages
     x = []
     y = []
     z = []
@@ -69,25 +69,25 @@ def tsne_plot(model,facts,show_examples=False): # word,sense - vector
                      ha='right',
                      va='bottom')
     plot_handles, _ = scatter.legend_elements()
-    l = ax.legend(plot_handles, handles,bbox_to_anchor=(-0.1, 1),
+    l = ax.legend(plot_handles, handles,bbox_to_anchor=(-0.3, 1),
                 loc="best", title="Senses",mode="expand",borderaxespad=0.)
-    x_average = []
-    y_average = []
-    z_average = []
-    for value in new_values_averages:
-        x_average.append(value[0])
-        y_average.append(value[1])
-        z_average.append(value[2])
-    scatter_averages = ax.scatter(x,y,z,c=c,cmap="Set1",marker="*")
-    for i in range(len(x)):
-        ax.annotate(labels_averages[i],
-                     xy=(x[i],y[i]),
-                     xytext=(5,2),
-                     textcoords='offset points',
-                     ha='right',
-                     va='bottom')
-    plot_handles,_ = scatter.legend_elements()
-    l = ax.legend(plot_handles,handles_averages,bbox_to_anchor=(-0.1,1),loc="best",title="Senses",mode="expand",borderaxespad=0.)
+    # x_average = []
+    # y_average = []
+    # z_average = []
+    # for value in new_values_averages:
+    #     x_average.append(value[0])
+    #     y_average.append(value[1])
+    #     z_average.append(value[2])
+    # scatter_averages = ax.scatter(x,y,z,c=c,cmap="Set1",marker="*")
+    # for i in range(len(x)):
+    #     ax.annotate(labels_averages[i],
+    #                  xy=(x[i],y[i]),
+    #                  xytext=(5,2),
+    #                  textcoords='offset points',
+    #                  ha='right',
+    #                  va='bottom')
+    # plot_handles,_ = scatter.legend_elements()
+    # l = ax.legend(plot_handles,handles_averages,bbox_to_anchor=(-0.1,1),loc="best",title="Senses",mode="expand",borderaxespad=0.)
     plt.tight_layout(pad = 1.4, w_pad = 1.4, h_pad = 1.4)
     mng = plt.get_current_fig_manager()
     mng.window.showMaximized()

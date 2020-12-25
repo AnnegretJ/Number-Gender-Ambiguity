@@ -111,7 +111,7 @@ def process_number(relevant_pairs,entry_dict,model,tokenizer,frame):
                                 break
                     else:
                         continue
-                    frame = frame.append({"Word":singular,"Number":"Sg","Sense":sense,"Sentence":example,"Word Vector": word_vector, "Sentence Vector": sentence_embedding},ignore_index=True)
+                    frame = frame.append({"Word":singular,"Number":"Sg","Gender":entry_dict[singular]["gender"],"Sense":sense,"Sentence":example,"Word Vector": word_vector, "Sentence Vector": sentence_embedding},ignore_index=True)
         for p_key in plural_senses.keys():
             for p_index in plural_senses[p_key].keys():
                 sense = plural_senses[p_key][p_index]
@@ -126,7 +126,7 @@ def process_number(relevant_pairs,entry_dict,model,tokenizer,frame):
                                 break
                     else:
                         continue
-                    frame = frame.append({"Word":plural,"Number":"Pl","Sense":sense,"Sentence":example,"Word Vector": word_vector, "Sentence Vector": sentence_embedding},ignore_index=True)
+                    frame = frame.append({"Word":plural,"Number":"Pl","Gender":entry_dict[plural]["gender"],"Sense":sense,"Sentence":example,"Word Vector": word_vector, "Sentence Vector": sentence_embedding},ignore_index=True)
     return frame
 
 def process_gender(language,gender_list,entry_dict,model,tokenizer,frame):
@@ -178,7 +178,7 @@ def process_other(other,entry_dict,model,tokenizer,frame):
                                 break
                     else:
                         continue
-                    frame = frame.append({"Word":item,"Sense":sense,"Sentence":example,"Word Vector":word_vector,"Sentence Vector":sentence_embedding},ignore_index=True)
+                    frame = frame.append({"Word":item,"Gender":entry_dict[item]["gender"],"Sense":sense,"Sentence":example,"Word Vector":word_vector,"Sentence Vector":sentence_embedding},ignore_index=True)
     return frame
 
 def write_files(language,path,filename,tokenizer,model):
@@ -186,14 +186,14 @@ def write_files(language,path,filename,tokenizer,model):
     entry_dict = read_files(filename)
     print("Getting data...")
     relevant_pairs,gender_list,other = find_sets(entry_dict)
-    number = pd.DataFrame(columns=["Word", "Number", "Gender", "Sense", "Sentence", "Word Vector", "Sentence Vector"])
-    number = process_number(relevant_pairs,entry_dict,model,tokenizer,number)
-    number.to_csv(path + "number.csv",sep="\t")
-    number.to_pickle(path + "number.pkl")
-    no_ambiguity = pd.DataFrame(columns=["Word", "Number", "Gender", "Sense", "Sentence", "Word Vector", "Sentence Vector"])
-    no_ambiguity = process_other(other,entry_dict,model,tokenizer,no_ambiguity)
-    no_ambiguity.to_csv(path + "other.csv",sep="\t")
-    no_ambiguity.to_pickle(path + "other.pkl")
+    # number = pd.DataFrame(columns=["Word", "Number", "Gender", "Sense", "Sentence", "Word Vector", "Sentence Vector"])
+    # number = process_number(relevant_pairs,entry_dict,model,tokenizer,number)
+    # number.to_csv(path + "number.csv",sep="\t")
+    # number.to_pickle(path + "number.pkl")
+    # no_ambiguity = pd.DataFrame(columns=["Word", "Number", "Gender", "Sense", "Sentence", "Word Vector", "Sentence Vector"])
+    # no_ambiguity = process_other(other,entry_dict,model,tokenizer,no_ambiguity)
+    # no_ambiguity.to_csv(path + "other.csv",sep="\t")
+    # no_ambiguity.to_pickle(path + "other.pkl")
     if language.lower() != "english":
         gender = pd.DataFrame(columns=["Word", "Number", "Gender", "Sense", "Sentence", "Word Vector", "Sentence Vector"])
         gender = process_gender(language,gender_list,entry_dict,model,tokenizer,gender)
