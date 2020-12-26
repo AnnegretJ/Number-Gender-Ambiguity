@@ -5,31 +5,33 @@ from sklearn.manifold import TSNE
 import torch
 import sys
 import numpy as np
-
+import os
 
 # import tensorflow as tf
 def tsne_plot(model,facts,show_examples=False): # word,sense - vector
     "Creates a TSNE model and plots it"
     labels = []
-    # labels_averages = []
+    labels_averages = []
     tokens = []
-    # tokens_averages = []
+    tokens_averages = []
     handles = []
-    # handles_averages = []
+    handles_averages = []
     for (word,sense) in model.keys():
         sum_of_vectors = np.empty(shape=len(model[(word,sense)]))
         counter = 0
         for item in model[(word,sense)]: # for every individual embedding vector
             counter += 1
             sum_of_vectors = np.add(sum_of_vectors,item)
-        # tokens_averages.append(np.array(sum_of_vectors)/counter) # vector for all example senses in this sense
+        
         tokens.append(np.array(sum_of_vectors/counter))
-        # labels_averages.append(word) # word according to above vector
         labels.append(word)
-        # handles_averages.append(str(word) + " " + str(sense) + str(facts[(word,sense)][0]))
         handles.append(str(word) + " " + str(sense) + str(facts[(word,sense)][0]))
-        tokens.append(model[(word,sense)]) # embedding-vectors
-        labels.append(word)
+        # tokens.append(model[(word,sense)]) # embedding-vectors
+        # labels.append(word)
+        if counter > 1: # when there are more than one examples for the current pair of word-sense
+            tokens_averages.append(np.array(sum_of_vectors)/counter) # vector for all example senses in this sense
+            labels_averages.append(word) # word according to above vector
+            handles_averages.append("Average of " + str(word) + " " + str(sense) + str(facts[(word,sense)][0]))
         if show_examples:
             try:
                 handles.append(str(word) + " " + str(sense) + str(facts[(word,sense)][0]) + str(facts[(word,sense)][1]))
@@ -45,10 +47,10 @@ def tsne_plot(model,facts,show_examples=False): # word,sense - vector
         new_values = tsne_model.fit_transform(tokens)
     else:
         new_values = tokens # this occurs when there is only one point to be presented
-    # if len(tokens_averages) > 1:
-    #     new_values_averages = tsne_model.fit_transform(tokens_averages)
-    # else:
-    #     new_values_averages = tokens_averages
+    if len(tokens_averages) > 1:
+        new_values_averages = tsne_model.fit_transform(tokens_averages)
+    else:
+        new_values_averages = tokens_averages
     x = []
     y = []
     z = []
@@ -69,8 +71,12 @@ def tsne_plot(model,facts,show_examples=False): # word,sense - vector
                      ha='right',
                      va='bottom')
     plot_handles, _ = scatter.legend_elements()
-    l = ax.legend(plot_handles, handles,bbox_to_anchor=(-0.3, 1),
-                loc="best", title="Senses",mode="expand",borderaxespad=0.)
+    for i in range(new_values_averages):
+        average_scatter = ax.scatter(new_values_averages[i][0],new_values_averages[i][1], c=c, cmap="Set1",marker="*")
+    other_handles,_ = average_scatter.legend_elements()
+    # l = ax.legend(plot_handles, handles=handles+handles_averages,bbox_to_anchor=(-0.3, 1),
+    #             loc="best", title="Senses",mode="expand",borderaxespad=0.)
+    l = ax.legend(handles=handles+handles_averages,bbox_to_anchor=(-0.3,1),loc="best",title="Senses",mode="expand",borderaxespad=0.)
     # x_average = []
     # y_average = []
     # z_average = []
@@ -210,79 +216,79 @@ if __name__ == "__main__":
                 print("Language not found.")
                 exit()
         if item == "-n": # for number-ambiguity
-            try:
+            if os.path.exists(path + "number.pkl"):
                 filename = path + "number.pkl"
-            except FileNotFoundError:
+            else:
                 filename = path + "number.csv"
                 mode_1 = "csv"
             data = read_files(filename,mode_1)
         elif item == "-g" and language.lower() != "english":
-            try:
+            if os.path.exists(path + "gender.pkl"):
                 filename = path + "gender.pkl"
-            except FileNotFoundError:
+            else:
                 filename = path + "gender.csv"
                 mode_1 = "csv"
             data = read_files(filename,mode_1)
         elif item == "-ng" and language.lower() != "english":
-            try:
+            if os.path.exists(path + "number.pkl"):
                 first = path + "number.pkl"
-            except FileNotFoundError:
+            else:
                 first = path + "number.csv"
                 mode_1 = "csv"
-            try:
+            if os.path.exists(path + "gender.pkl"):
                 second = path + "gender.pkl"
-            except FileNotFoundError:
+            else:
                 second = path + "gender.csv"
                 mode_2 = "csv"
             data = read_files(first,mode_1,second,mode_2)
         elif item == "-o": # for all data except ambiguity-types
-            try:
+            if os.path.exists(path + "other.pkl"):
                 filename = path + "other.pkl"
-            except FileNotFoundError:
+            else:
                 filename = path + "other.csv"
                 mode_1 = "csv"
             data = read_files(filename,mode_1)
         elif item == "-no":
-            try:
+            if os.path.exists(path + "number.pkl"):
                 first = path + "number.pkl"
-            except FileNotFoundError:
+            else:
                 first = path + "number.csv"
                 mode_1 = "csv"
-            try:
+            if os.path.exists(path + "other.pkl"):
                 second = path + "other.pkl"
-            except FileNotFoundError:
+            else:
                 first = path + "other.csv"
                 mode_2 = "csv"
             data = read_files(first,mode_1,second,mode_2)
         elif item == "-go" and language.lower() != "english":
-            try:
+            if os.path.exists(path + "gender.pkl"):
                 first = path + "gender.pkl"
-            except FileNotFoundError:
-                first = path + "other.csv"
+            else:
+                first = path + "gender.csv"
                 mode_1 = "csv"
-            try:
+            if os.path.exists(path + "other.pkl"):
                 second = path + "other.pkl"
-            except FileNotFoundError:
+            else:
                 second = path + "other.csv"
                 mode_2 = "csv"
             data = read_files(first,mode_1,second,mode_2)
         elif item == "-a": # for all available data
-            try:
+            if os.path.exists(path + "number.pkl"):
                 first = path + "number.pkl"
-            except FileNotFoundError:
+            else:
                 first = path + "number.csv"
                 mode_1 = "csv"
-            try:
+            if os.path.exists(path + "other.pkl"):
                 second = path + "other.pkl"
-            except FileNotFoundError:
+            else:
                 second = path + "other.csv"
                 mode_2 = "csv"
             if language.lower() == "english":
                 data = read_files(first,mode_1,second,mode_2)
             else:
-                try:
+                if os.path.exists(path + "gender.pkl"):
                     third = path + "gender.pkl"
-                except FileNotFoundError:
+                else:
                     third = path + "gender.csv"
                     mode_3 = "csv"
                 data = read_files(first,mode_1,second,mode_2,third,mode_3)
