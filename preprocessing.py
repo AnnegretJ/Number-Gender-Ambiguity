@@ -92,8 +92,8 @@ def find_sets(entry_dict):
         if "plural" in entry_dict[title].keys():
             plural = entry_dict[title]["plural"]
             for item in plural:
-                if item == "none" or item == "unspecified": # only use existing plurals
-                    continue
+                # if item == "none" or item == "unspecified": # only use existing plurals
+                #     continue
                 if item in entry_dict.keys() and entry_dict[item] != entry_dict[title]: # when plural has an own entry, which is not the current entry (when plural is written the same as singular)
                     number_pairs.append((title,item)) # add all pairs of singular and plural with own sense to list
         if "gender" in entry_dict[title].keys(): # German and Spanish
@@ -132,6 +132,6 @@ if __name__ == "__main__":
     entry_dict = read_files(filename)
     print("Finding relevant data...")
     (number_pairs,gender_list,others) = find_sets(entry_dict)
-    # print(number_pairs)
+    print(number_pairs)
     # print(gender_list)
     # print(others)
