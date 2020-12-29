@@ -6,6 +6,8 @@ import torch
 import sys
 import numpy as np
 import os
+import itertools
+from scipy.spatial import distance
 
 # import tensorflow as tf
 def tsne_plot(model,facts,show_examples=False): # word,sense - vector
@@ -16,6 +18,7 @@ def tsne_plot(model,facts,show_examples=False): # word,sense - vector
     tokens_averages = []
     handles = []
     handles_averages = []
+    all_vectors = dict()
     for (word,sense) in model.keys():
         sum_of_vectors = np.empty(shape=len(model[(word,sense)]))
         counter = 0
@@ -32,6 +35,9 @@ def tsne_plot(model,facts,show_examples=False): # word,sense - vector
             tokens_averages.append(np.array(sum_of_vectors)/counter) # vector for all example senses in this sense
             labels_averages.append(word) # word according to above vector
             handles_averages.append("Average of " + str(word) + " " + str(sense) + str(facts[(word,sense)][0]))
+            all_vectors[word] = tokens_averages[-1] # the last added item
+        else:
+            all_vectors[word] = tokens[-1] # when only one new item was added to tokens, add it as well
         if show_examples:
             try:
                 handles.append(str(word) + " " + str(sense) + str(facts[(word,sense)][0]) + str(facts[(word,sense)][1]))
@@ -94,6 +100,8 @@ def tsne_plot(model,facts,show_examples=False): # word,sense - vector
     #                  va='bottom')
     # plot_handles,_ = scatter.legend_elements()
     # l = ax.legend(plot_handles,handles_averages,bbox_to_anchor=(-0.1,1),loc="best",title="Senses",mode="expand",borderaxespad=0.)
+    for i in itertools.combinations(all_vectors.keys(),2): # all combinations of 2 vectors
+        print("Cosine Distance between ", i[0], i[1], ": ", distance.cosine(all_vectors[i[0]],all_vectors[i[1]]))
     plt.tight_layout(pad = 1.4, w_pad = 1.4, h_pad = 1.4)
     mng = plt.get_current_fig_manager()
     mng.window.showMaximized()

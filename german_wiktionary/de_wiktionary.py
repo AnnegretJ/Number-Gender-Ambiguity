@@ -18,9 +18,11 @@ import language_check # some module for grammar-checking
 
 def write_dict(entries,title,language):
     """
-    Helper function for writing the final output file \n
-    :param entries: dictionary for entries \n
-    :param title: the currently observed word \n
+    Helper function for writing the final output in a dictionary \n
+    ;param entries: (dict) dictionary for entries, containing a dictionary at key 'title' which contains key 'textbit', with value of textpart containing all relevant information of original input-file\n
+    ;param title: the currently observed word \n
+    ;param language: the language of the current entries (supported for English/German/Spanish)\n
+    returns: -
     """
     re_number_of = re.compile(":\[(\d+)\]")
     i = 1
@@ -28,14 +30,16 @@ def write_dict(entries,title,language):
         senses = entries[title]["textbit"].split('== {{Wortart|Substantiv|Deutsch}}')
     elif language == "Spanish":
         senses = entries[title]["textbit"].split("== {{Wortart|Substantiv|Spanisch}}")
+    elif language == "English":
+        senses = entries[title]["textbit"].split("== {{Wortart|Substantiv|Englisch}}")
     for sense in senses:
         entries[title][i] = defaultdict(list)
+        # find information for German
         if language == "German":
             entries[title][i]["flection"] = set()
         fields = sense.split("\n{{")
         for field in fields:
-            german = "Sprache|Deutsch"
-            spanish = "Sprache|Spanisch"
+            # get information for German
             if language == "German" and "Deutsch Substantiv Übersicht" in field:
                 morphs = field.split("\n")
                 for morph in morphs:
@@ -54,6 +58,7 @@ def write_dict(entries,title,language):
                             else:
                                 c = line.split(" ")[-1]
                                 entries[title][i]["flection"].add(c)  
+            # get information for Spanish
             elif language == "Spanish" and "Spanisch Substantiv Übersicht" in field:
                 morphs = field.split("\n")
                 for morph in morphs:
@@ -69,6 +74,7 @@ def write_dict(entries,title,language):
                         else:
                             plural = morph.split(" ",1)[-1]
                         entries[title][i]["plural"].append(plural)
+            # get information for English
             elif language == "English" and "Englisch Substantiv Übersicht" in field:
                 morphs = field.split("\n")
                 for morph in morphs:
@@ -78,6 +84,7 @@ def write_dict(entries,title,language):
                         else:
                             plural = morph.split(" ",1)[-1]
                         entries[title][i]["plural"].append(plural)
+            # find additional plural-versions
             elif "Worttrennung}}" in field:
                 infos = field.split("\n")
                 for info in infos:
@@ -90,6 +97,7 @@ def write_dict(entries,title,language):
                                 p = part.split()[-1]
                                 p = p.replace("·","")
                                 entries[title][i]["plural"].append(p)
+            # find senses
             elif "Bedeutungen}}" in field:
                 entries[title][i]["senses"] = {}
                 field = re.sub("Bedeutungen}}\n","",field)
@@ -99,6 +107,7 @@ def write_dict(entries,title,language):
                         number_of = re_number_of.search(meaning)
                         number = number_of.group(1)
                         entries[title][i]["senses"][number] = meaning
+            # find examples
             elif "Beispiele}}" in field:
                 entries[title][i]["examples"] = defaultdict(list)
                 field = re.sub("Beispiele}}\n","",field)
@@ -119,12 +128,34 @@ def write_dict(entries,title,language):
         i += 1
 
 def german_xml_parser(language,infile,outfile,entries=dict(),plurals=set(),n=0):
+    """
+    Parser for German Wiktionary-dumps\n
+    ;param language: (str) language of input-pages\n
+    ;param infile: (xml-file) directory of file containing Wiktionary-entries in .xml format\n
+    ;param outfile: (txt-file) directory of output-file\n
+    ;param entries: (dict) dictionary for collecting information on individual entries\n
+    ;param plurals: (set) set to contain all possible plurals\n
+    ;param n: (int) counter\n
+    ;returns: File containing all relevant data, with structure\n
+    title: <title>\n
+    \t plural: [<plural_1>,...,<plural_n>]\n
+    \t gender: [<gender_1>,...,<gender_n>]\n
+    \t\t inflection: [<inflection_1>,...,<inflection_n>]\n
+    \t\t sense1: <sense>\n
+    \t\t\t example(s)1: [<example_1>,...,<examples_n>]\n
+    ...
+    \t\t sensen: <sense>\n
+    \t\t\t example(s)n: [<example_1>,...,<examples_n>]\n\n
+    ...
+    """
     tree = ET.parse(infile)
     root = tree.getroot()
     for child in root:
         for child2 in child:
+            # find page
             if child2.tag == "{http://www.mediawiki.org/xml/export-0.10/}page":
                 for child3 in child2:
+                    # find word/title
                     if child3.tag == "{http://www.mediawiki.org/xml/export-0.10/}title":
                         if child3.text != None:
                             word = child3.text # this is the title of the entry -> the word, this happens in the first iteration
@@ -136,6 +167,7 @@ def german_xml_parser(language,infile,outfile,entries=dict(),plurals=set(),n=0):
                             if child4.tag == "{http://www.mediawiki.org/xml/export-0.10/}text":
                                 text_wiki = child4.text
                                 if text_wiki:
+                                    # add textbit to dictionary
                                     for textbit in text_wiki.split("---"):
                                         if language == "German" and "Substantiv|Deutsch" in textbit: # find the German-section for nouns  
                                             entries[word] = {}
@@ -143,14 +175,18 @@ def german_xml_parser(language,infile,outfile,entries=dict(),plurals=set(),n=0):
                                         elif language == "Spanish" and "Substantiv|Spanisch" in textbit:
                                             entries[word] = {}
                                             entries[word]["textbit"] = textbit
+                                        elif language == "English" and "Substantiv|Englisch" in textbit:
+                                            entries[word] = {}
+                                            entries[word]["textbit"] = textbit
     for title in entries:
         if "textbit" in entries[title].keys():
             write_dict(entries,title,language)
             del entries[title]["textbit"]
+            # find additional information from WordNet for English data
             if language == "English" and all(entries[title][index]["senses"] == {} for index in entries[title].keys()):
                 index = 1
                 example_index = 1
-                for item in wn.synsets(title,"n"): # find the according wiktionary noun synsets 
+                for item in wn.synsets(title,"n"): # find the according WordNet noun synsets 
                     examples = item.examples()
                     actual_examples = []
                     for example in examples:
@@ -164,6 +200,7 @@ def german_xml_parser(language,infile,outfile,entries=dict(),plurals=set(),n=0):
                     entries[title][index]["examples"][example_index] = actual_examples
                     index += 1
                     example_index += 1
+    # find words that look like a plural of another word, but are not actually
     if language == "German":
         word = plurals.pop()
         for item in entries: # title
@@ -171,6 +208,7 @@ def german_xml_parser(language,infile,outfile,entries=dict(),plurals=set(),n=0):
                 for subitem in entries[item]: # i
                     if word not in entries[item][subitem]["plural"]: # when the word is not already noted as a possible plural
                         entries[item][subitem]["plural"].append(word)
+    # write the file
     for el in entries:
         n += 1
         outfile.write("title: " + str(el) + "\n")
@@ -190,8 +228,11 @@ def german_xml_parser(language,infile,outfile,entries=dict(),plurals=set(),n=0):
 
 def replace_words_in_examples_new(word,sentence,tool):
     '''
-    instead of deleting entries where word does not appear in an example sentence, we replace the appearing synonym with the word
-    returns adjusted examples
+    instead of deleting entries where word does not appear in an example sentence, replace the appearing synonym with the word\n
+    ;param word: (str) the word supposed to be found in sentence\n
+    ;param sentence: (str) an example sentence for a sense of word, that does not contain word\n
+    ;param tool: (language_check.LanguageTool) a tool for correcting grammar\n
+    ;returns: (str) adjusted example\n
     '''
     replace_item = ""
     synonyms = wn.synsets(word, "n") # find all synonyms of the word, that are nouns as well
