@@ -9,13 +9,9 @@ split_files_output/*
 wiktionaries/*
 german_wiktionary/wiktionaries/*
 spanish_wiktionary/wiktionaries/*
-*.csv
 *.xml
-*.pkl
 *.zip
 *.txt
-*/.csv
-*/.pkl
 */.xml
 */.zip
 */*/.csv
