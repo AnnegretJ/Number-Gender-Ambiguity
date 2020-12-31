@@ -20,6 +20,8 @@ def tsne_plot(model,facts,show_examples=False): # word,sense - vector
     handles_averages = []
     all_vectors = dict()
     for (word,sense) in model.keys():
+        if np.isnan(item).any(): # when there is NaN in the array
+            continue
         sum_of_vectors = np.empty(shape=len(model[(word,sense)]))
         counter = 0
         for item in model[(word,sense)]: # for every individual embedding vector
@@ -78,7 +80,8 @@ def tsne_plot(model,facts,show_examples=False): # word,sense - vector
                      va='bottom')
     plot_handles, _ = scatter.legend_elements()
     for i in range(new_values_averages):
-        average_scatter = ax.scatter(new_values_averages[i][0],new_values_averages[i][1], c=c, cmap="Set1",marker="*")
+        # average_scatter = ax.scatter(new_values_averages[i][0],new_values_averages[i][1], c=range(len(new_values_averages)), cmap="Set1",marker="*")
+        average_scatter = ax.scatter(new_values_averages[i][0],new_values_averages[i][1],marker="*")
     other_handles,_ = average_scatter.legend_elements()
     # l = ax.legend(plot_handles, handles=handles+handles_averages,bbox_to_anchor=(-0.3, 1),
     #             loc="best", title="Senses",mode="expand",borderaxespad=0.)

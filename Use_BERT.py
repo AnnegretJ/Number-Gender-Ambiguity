@@ -45,7 +45,10 @@ def run_BERT(word,tokenizer ,text, model):
     model.eval()
     # Predict hidden states features for each layer
     with torch.no_grad():
-        encoded_layers, _ = model(tokens_tensor, segments_tensors)
+        try:
+            encoded_layers, _ = model(tokens_tensor, segments_tensors)
+        except RuntimeError:
+            return (None,None)
     layer_word = 0
     batch_word = 0
     token_word = 0
