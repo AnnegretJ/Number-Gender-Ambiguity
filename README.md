@@ -40,3 +40,32 @@ $ python start_wiktionary.py <English/German/Spanish>
 ## File-Output
 * <english/german/spanish>_wiktionary/wiktionaries/<en/de/es>-wiktionary.new.txt
 
+# preprocessing.py
+In this file, the formerly gathered data is processed, so that entries without example sentences are removed and all punctuation is removed from the sentences. All data is sorted into three categories: words containing gender-ambiguity, words containing number-ambiguity, and words containing neither type of ambiguity. This file is called by Use_BERT.py, and is not supposed to be called directly, as it does not create any file output.
+```
+$ python preprocessing.py
+```
+## Imports
+* defaultdict (from collections)
+* wordnet (from nltk.corpus)
+* string
+* sys
+* tqdm
+
+## Functions
+* read_files(filename)
+* find_sets(entry_dict)
+
+### read_files(filename)
+Function to read in files containing necessary information
+* param filename: directory of input-file (type: txt-file)
+* output: dictionary containing all informations of the file (type: dict)
+
+### find_sets(entry_dict)
+Find relevant data on number- or gender-ambiguity
+* param entry_dict: dictionary containing all relevant information (type: dict)
+* output: (list of word-pairs (sg,pl) with number-ambiguity, list of words with gender-ambiguity, list of words with none of those ambiguity-types) (type: tuple)
+
+# Use_BERT.py
+Using the individual categories of data created by preprocessing.py, this file runs each example sentence for each word through BERT
+TODO
