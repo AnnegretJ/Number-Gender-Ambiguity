@@ -10,6 +10,7 @@ This file filters all neccessary information from the English dump for any speci
 * wordnet (from nltk.corpus)
 * sys
 * language_check
+* tqdm
 ## Functions:
 * get_plural_wiktionary(text_wiki,stem)
 * write_file(language,title,filename,cat)
