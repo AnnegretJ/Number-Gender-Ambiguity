@@ -1,4 +1,4 @@
-#english_wiktionary
+# english_wiktionary
 
 # en_wiktionary.py
 This file filters all neccessary information from the English dump for any specified language, and is specifically built to deal with the structure given by English Wiktionary. This file is not supposed to be called directly as a whole, but for individual functions or using other files such as start_wiktionary.py.
