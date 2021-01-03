@@ -37,3 +37,21 @@ Parser for German Wiktionary-dumps
 * param plurals: set to contain all possible plurals (type: set)
 * param n: counter (type: int)
 * output: File containing all relevant data, with structure (type: txt-file)
+  
+      title: <title>\n
+  
+      \t plural: [<plural_1>,...,<plural_n>]\n
+      
+      \t gender: [<gender_1>,...,<gender_n>]\n
+      
+      \t\t sense1: <sense>\n
+      
+      \t\t\t example(s)1: [<example_1>,...,<examples_n>]\n
+      
+      ...
+      
+      \t\t sensen: <sense>\n
+      
+      \t\t\t example(s)n: [<example_1>,...,<examples_n>]\n\n
+      
+      ...
