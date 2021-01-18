@@ -40,25 +40,32 @@ $ python start_wiktionary.py <English/German/Spanish>
 ## File-Output
 * <english/german/spanish>_wiktionary/wiktionaries/<en/de/es>-wiktionary.new.txt
 
-# en_wiktionary.py
-This file filters all neccessary information from the English dump for any specified language, and is specifically built to deal with the structure given by English Wiktionary. This file is not supposed to be called directly as a whole, but for individual functions or using other files such as start_wiktionary.py.
-## Imports:
-* xml.etree.cElementTree
-* re
-* os
+# preprocessing.py
+In this file, the formerly gathered data is processed, so that entries without example sentences are removed and all punctuation is removed from the sentences. All data is sorted into three categories: words containing gender-ambiguity, words containing number-ambiguity, and words containing neither type of ambiguity. This file is called by Use_BERT.py, and is not supposed to be called directly, as it does not create any file output.
+```
+$ python preprocessing.py
+```
+## Imports
 * defaultdict (from collections)
 * wordnet (from nltk.corpus)
+* string
 * sys
-* language_check
-## Functions:
-* get_plural_wiktionary(text_wiki,stem)
-* write_file(language,title,filename,cat)
-* replace_words_in_examples_new(word,sentence,tool)
-* english_xml_parser(language,infile,outfile)
-### get_plural_wiktionary(text_wiki,stem)
-This function is used to quickly find the plural specified for a word in it's Wikionary-entry.
-* param text_wiki: one part of text found under the <text>-tag in the input-file given to write_file(language,title,filename,cat) (type:str)
-* param stem: the stem of the observed word/the observed word itself (type:str)
-* output: list of possible plurals (type:list)
-### write_file(language,title,filename,cat)
+* tqdm
+
+## Functions
+* read_files(filename)
+* find_sets(entry_dict)
+
+### read_files(filename)
+Function to read in files containing necessary information
+* param filename: directory of input-file (type: txt-file)
+* output: dictionary containing all informations of the file (type: dict)
+
+### find_sets(entry_dict)
+Find relevant data on number- or gender-ambiguity
+* param entry_dict: dictionary containing all relevant information (type: dict)
+* output: (list of word-pairs (sg,pl) with number-ambiguity, list of words with gender-ambiguity, list of words with none of those ambiguity-types) (type: tuple)
+
+# Use_BERT.py
+Using the individual categories of data created by preprocessing.py, this file runs each example sentence for each word through BERT
 TODO
