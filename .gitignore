@@ -14,7 +14,8 @@ spanish_wiktionary/wiktionaries/*
 *.txt
 */.xml
 */.zip
-*/*/.csv
-*/*/.pkl
+*/.csv
+*/.pkl
 */*/.xml
 */*/.zip
+git/*
