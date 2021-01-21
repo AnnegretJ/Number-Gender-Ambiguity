@@ -33,6 +33,12 @@ def read_files(filename):
                 genus = eval(genus)
                 # make sure all data uses the same string for genus (to avoid doubled entries)
                 for item in genus:
+                    item.strip("|")
+                    item.strip("{")
+                    item.strip("}")
+                    item.strip("de")
+                    item.strip("en")
+                    item.strip("es")
                     if item in m_genus:
                         item = "m"
                     elif item in f_genus:
@@ -49,8 +55,8 @@ def read_files(filename):
                 for item in plural:
                     entry_dict[title]["plural"].add(item)
             # get inflection
-            elif line.startswith("\t\tflection: ") and title in entry_dict.keys(): # currently only German
-                flection = line[len("\t\tflection: "):]
+            elif line.startswith("\tflection: ") and title in entry_dict.keys(): # currently only German
+                flection = line[len("\tflection: "):]
                 flection = eval(flection) # convert string back to set
                 for item in flection:
                     entry_dict[title]["flection"].add(item)
@@ -121,34 +127,18 @@ def find_sets(entry_dict):
     return (number_pairs,gender_list,others)
 
 if __name__ == "__main__":
-    language = input("Choose a language: German/Spanish/English \n ")
+    language = input("Choose a language: German/Spanish/English \n ").lower()
+    shorts = {"german":"de","english":"en","spanish":"es"}
+    if language not in ["german","spanish","english"]:
+        print(language + " is not supported.")
+        sys.exit()
     if "win" in sys.platform:
-        if language.lower() == "german":
-            filename = "german_wiktionary\\wiktionaries\\dewiktionary-new.txt"
-        elif language.lower() == "english":
-            filename = "english_wiktionary\\wiktionaries\\enwiktionary-new.txt"
-        elif language.lower() == "spanish":
-            filename = "spanish_wiktionary\\wiktionaries\\eswiktionary-new.txt"
-        else:
-            sys.exit()
+        filename = language + "_wiktionary\\wiktionaries\\" + shorts[language] + "wiktionary-new.txt"
     elif "linux" in sys.platform:
-        if language.lower() == "german":
-            filename = "german_wiktionary/wiktionaries/dewiktionary-new.txt"
-        elif language.lower() == "english":
-            filename = "english_wiktionary/wiktionaries/enwiktionary-new.txt"
-        elif language.lower() == "spanish":
-            filename = "spanish_wiktionary/wiktionaries/eswiktionary-new.txt"
-        else:
-            sys.exit()
+        filename = language + "_wiktionary/wiktionaries/" + shorts[language] + "wiktionary-new.txt"
     else:
         print(sys.platform," is not supported.")
     print("Reading file...")
     entry_dict = read_files(filename)
     print("Finding relevant data...")
     (number_pairs,gender_list,others) = find_sets(entry_dict)
-    # print(number_pairs)
-    # for (sg,pl) in number_pairs:
-    #     print(entry_dict[sg])
-    #     print(entry_dict[pl])
-    # print(gender_list)
-    # print(others)

@@ -1,9 +1,21 @@
 import sys
 from tqdm import tqdm
 import time
-
 import os
 # get pathways to all necessary files
+
+languages = ["english","german","spanish"]
+
+if sys.argv[1]:
+    language = sys.argv[1].lower()
+    if language not in languages:
+        print(language + " is not supported")
+        sys.exit()
+    languages.remove(language)
+else:
+    print("Missing argument: <language>")
+    sys.exit()
+shorts = {"english":"en","german":"de","spanish":"es"}
 if "win" in sys.platform:
     win = True
     sys.path.insert(1, "spanish_wiktionary\\")
@@ -24,95 +36,26 @@ else:
     print(sys.platform, " is not supported.")
 
 start = time.time()
-if sys.argv[1]:
-    language = sys.argv[1]
-    # process English files
-    if language.lower() == "english":
-        if win:
-            path = "english_wiktionary\\wiktionaries\\"
-        else:
-            path = "english_wiktionary/wiktionaries/"
-        with open(path +'enwiktionary-new.txt', mode='w+', encoding="utf8") as wiktionary_out:
-            n=1 # entry counter
-            print("Processing data from English wiktionary...")
-            # use individually splitted files
-            if win:
-                for filename in tqdm(os.listdir(path + "by_entry\\")): # \ for Windows, / for Linux
-                    with open(path + "by_entry\\" + filename, mode = "r", encoding = "utf-8") as file_in_wiktionary:
-                        english_xml_parser("English",file_in_wiktionary,wiktionary_out)
-            else:
-                for filename in tqdm(os.listdir(path + "by_entry/")): # \ for Windows, / for Linux
-                    with open(path + "by_entry/" + filename, mode = "r", encoding = "utf-8") as file_in_wiktionary:
-                        english_xml_parser("English",file_in_wiktionary,wiktionary_out)
-            # use English data found in the German dump
-            print("Processing data from German wiktionary...")
-            with open("english_from_german_dump.xml",mode="r",encoding="utf-8") as g:
-                german_xml_parser("English",g,wiktionary_out,entries=dict(),n=n)
-            # use English data found in the Spanish dump
-            print("Processing data from Spanish wiktionary...")
-            with open("english_from_spanish_dump.xml",mode="r",encoding="utf-8") as s:
-                spanish_xml_parser("English",s,wiktionary_out)
-    # process German files
-    elif language.lower() == "german":
-        # path to data
-        if win:
-            path = "german_wiktionary\\wiktionaries\\"
-        else:
-            path = "german_wiktionary/wiktionaries/"
-        entries = dict()
-        possible_regular_plurals = set()
-        with open(path + "dewiktionary-new.txt", mode = "w+", encoding = "utf-8") as wiktionary_out:
-            n=1
-            print("Processing data from German wiktionary...")
-            # use individually splitted files
-            if win:
-                for filename in tqdm(os.listdir(path + "by_entry\\")):
-                    with open(path + "by_entry\\" + filename, mode = "r", encoding = "utf-8") as file_in_wiktionary:
-                        german_xml_parser("German",file_in_wiktionary,wiktionary_out,entries=entries,plurals=possible_regular_plurals,n=n)
-            else:
-                for filename in tqdm(os.listdir(path + "by_entry/")):
-                    with open(path + "by_entry/" + filename, mode = "r", encoding = "utf-8") as file_in_wiktionary:
-                        german_xml_parser("German",file_in_wiktionary,wiktionary_out,entries=entries,plurals=possible_regular_plurals,n=n)
-            # use German data found in the English dump
-            print("Processing data from English wiktionary...")
-            with open("german_from_english_dump.xml",mode="r",encoding="utf-8") as e:
-                english_xml_parser(language,e,wiktionary_out)
-            # use German data found in the Spanish dump
-            print("Processing data from Spanish wiktionary...")
-            with open("german_from_spanish_dump.xml",mode="r",encoding="utf-8") as s:
-                spanish_xml_parser(language,s,wiktionary_out)
-    # process Spanish files
-    elif language.lower() == "spanish":
-        # path to data
-        if win:
-            path = "spanish_wiktionary\\wiktionaries\\"
-        else:
-            path = "spanish_wiktionary/wiktionaries/"
-        with open(path +'eswiktionary-new.txt', mode='w+', encoding="utf8") as wiktionary_out:
-            n = 1
-            print("Processing data from Spanish wiktionary...")
-            # use individually splitted files
-            if win:
-                for filename in tqdm(os.listdir(path + "by_entry\\")): # \ for Windows, / for Linux
-                    with open(path + "by_entry\\" + filename, mode = "r", encoding = "utf-8") as file_in_wiktionary:
-                        spanish_xml_parser("Spanish",file_in_wiktionary,wiktionary_out)
-            else:
-                for filename in tqdm(os.listdir(path + "by_entry/")): # \ for Windows, / for Linux
-                    with open(path + "by_entry/" + filename, mode = "r", encoding = "utf-8") as file_in_wiktionary:
-                        spanish_xml_parser("Spanish",file_in_wiktionary,wiktionary_out)
-            # use Spanish data found in the English dump
-            print("Processing data from English wiktionary...")
-            with open("spanish_from_english_dump.xml",encoding="utf-8") as e:
-                english_xml_parser("Spanish",e,wiktionary_out)
-            # use Spanish data found in the German dump
-            print("Processing data from German wiktionary...")
-            with open("spanish_from_german_dump.xml",encoding="utf-8") as g:
-                german_xml_parser("Spanish",g,wiktionary_out,entries=dict(),n=n)
-    else:
-        print("Invalid argument.")
-        sys.exit()
+parser = {"english":english_xml_parser,"german":german_xml_parser,"spanish":spanish_xml_parser}
+if win:
+    path = language + "_wiktionary\\wiktionaries\\"
 else:
-    print("Missing argument: <language>")
-    sys.exit()
+    path = language + "_wiktionary/wiktionaries/"
+with open(path + shorts[language] + "wiktionary-new.txt",mode="w+",encoding="utf-8") as wiktionary_out:
+    n=1 # entry counter
+    print("Processing data from " + language + " wiktionary...")
+    # use individually splitted files
+    if win:
+        for filename in tqdm(os.listdir(path + "by_entry\\")): # \ for Windows, / for Linux
+            with open(path + "by_entry\\" + filename, mode = "r", encoding = "utf-8") as file_in_wiktionary:
+                parser[language](language,shorts,file_in_wiktionary,wiktionary_out)
+    else:
+        for filename in tqdm(os.listdir(path + "by_entry/")): # \ for Windows, / for Linux
+            with open(path + "by_entry/" + filename, mode = "r", encoding = "utf-8") as file_in_wiktionary:
+                parser[language](language,shorts,file_in_wiktionary,wiktionary_out)
+    for other in languages:
+        print("Processing data from " + other + " wiktionary...")
+        with open(language + "_from_" + other + "_dump.xml",mode="r",encoding="utf-8") as other_file:
+            parser[other](language,shorts,other_file,wiktionary_out)
 end = time.time()
 print(str(end-start)," seconds")

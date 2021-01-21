@@ -81,7 +81,7 @@ def run_BERT(word,tokenizer ,text, model):
     sentence_embedding = torch.mean(token_vecs, dim=0)
     return (vec_word,sentence_embedding)
 
-def process_number(language,relevant_pairs,entry_dict,model,tokenizer,frame):
+def process_number(relevant_pairs,entry_dict,model,tokenizer,frame):
     """
     Process data on number-ambiguity-data and run through BERT\n
     ;param language: (str) specified language (supports English,German,Spanish)\n
@@ -98,9 +98,8 @@ def process_number(language,relevant_pairs,entry_dict,model,tokenizer,frame):
         plural_examples = entry_dict[plural]["examples"]
         word_senses = entry_dict[singular]["senses"]
         plural_senses = entry_dict[plural]["senses"]
-        if language.lower() == "german": # because flections are only saved for German by now
-            sg_flections = entry_dict[singular]["flection"]
-            pl_flections = entry_dict[plural]["flection"]
+        sg_flections = entry_dict[singular]["flection"]
+        pl_flections = entry_dict[plural]["flection"]
         # calculate embeddings for singular-terms
         for key in word_senses.keys():
             for w_index in word_senses[key].keys():
@@ -110,7 +109,7 @@ def process_number(language,relevant_pairs,entry_dict,model,tokenizer,frame):
                     if singular in marked_text.split():
                         (word_vector,sentence_embedding) = run_BERT(singular,tokenizer,marked_text,model)
                     # when the word does not occur in a sentence, maybe an inflected form does
-                    elif language.lower() == "german" and any([f in marked_text.split() for f in sg_flections]):
+                    elif any([f in marked_text.split() for f in sg_flections]):
                         for f in sg_flections:
                             if f in marked_text.split():
                                 (word_vector,sentence_embedding) = run_BERT(f,tokenizer,marked_text,model)
@@ -126,7 +125,7 @@ def process_number(language,relevant_pairs,entry_dict,model,tokenizer,frame):
                     marked_text = get_marked_text_from_examples(example)
                     if plural in marked_text.split():
                         (word_vector,sentence_embedding) = run_BERT(plural,tokenizer,marked_text,model)
-                    elif language.lower() == "german" and any([f in marked_text.split() for f in pl_flections]):
+                    elif any([f in marked_text.split() for f in pl_flections]):
                         for f in pl_flections:
                             if f in marked_text.split():
                                 (word_vector,sentence_embedding) = run_BERT(f,tokenizer,marked_text,model)
@@ -136,7 +135,7 @@ def process_number(language,relevant_pairs,entry_dict,model,tokenizer,frame):
                     frame = frame.append({"Word":plural,"Number":"Pl","Gender":entry_dict[plural]["gender"],"Sense":sense,"Sentence":example,"Word Vector": word_vector, "Sentence Vector": sentence_embedding},ignore_index=True)
     return frame
 
-def process_gender(language,gender_list,entry_dict,model,tokenizer,frame):
+def process_gender(gender_list,entry_dict,model,tokenizer,frame):
     """
     Process data on gender-ambiguity-data and run through BERT\n
     ;param language: (str) specified language (supports English,German,Spanish)\n
@@ -151,8 +150,7 @@ def process_gender(language,gender_list,entry_dict,model,tokenizer,frame):
     for item in tqdm(gender_list):
         examples = entry_dict[item]["examples"]
         gender = entry_dict[item]["gender"]
-        if language.lower() == "german": # because flections are only saved for German by now
-            flections = entry_dict[item]["flection"]
+        flections = entry_dict[item]["flection"]
         for g in gender:
             senses = entry_dict[item]["senses"][g]
             for index in senses:
@@ -163,7 +161,7 @@ def process_gender(language,gender_list,entry_dict,model,tokenizer,frame):
                     if item in marked_text.split():
                         (word_vector,sentence_embedding) = run_BERT(item,tokenizer,marked_text,model)
                     # check if inflections of word occur in the sentence
-                    elif language.lower() == "german" and any([f in marked_text.split() for f in flections]):
+                    elif any([f in marked_text.split() for f in flections]):
                         for f in flections:
                             if f in marked_text.split():
                                 (word_vector,sentence_embedding) = run_BERT(f,tokenizer,marked_text,model)
@@ -173,7 +171,7 @@ def process_gender(language,gender_list,entry_dict,model,tokenizer,frame):
                     frame = frame.append({"Word":item,"Gender":g,"Sense":current,"Sentence":sentence,"Word Vector":word_vector,"Sentence Vector":sentence_embedding},ignore_index=True)
     return frame
 
-def process_other(language,other,entry_dict,model,tokenizer,frame):
+def process_other(other,entry_dict,model,tokenizer,frame):
     """
     Process data on non-ambiguity-data and run through BERT\n
     ;param language: (str) specified language (supports English,German,Spanish)\n
@@ -188,8 +186,7 @@ def process_other(language,other,entry_dict,model,tokenizer,frame):
     for item in tqdm(other):
         examples = entry_dict[item]["examples"]
         senses = entry_dict[item]["senses"]
-        if language.lower() == "german": # because inflections are only saved for German by now
-            flections = entry_dict[item]["flection"]
+        flections = entry_dict[item]["flection"]
         for key in senses.keys():
             for index in senses[key].keys():
                 sense = senses[key][index]
@@ -198,7 +195,7 @@ def process_other(language,other,entry_dict,model,tokenizer,frame):
                     if item in marked_text.split():
                         (word_vector,sentence_embedding) = run_BERT(item,tokenizer,marked_text,model)
                     # check if inflection of word occurs in sentence
-                    elif language.lower() == "german" and any([f in marked_text.split() for f in flections]):
+                    elif any([f in marked_text.split() for f in flections]):
                         for f in flections:
                             if f in marked_text.split():
                                 (word_vector,sentence_embedding) = run_BERT(f,tokenizer,marked_text,model)
@@ -223,57 +220,37 @@ def write_files(language,path,filename,tokenizer,model):
     print("Getting data...")
     relevant_pairs,gender_list,other = find_sets(entry_dict)
     number = pd.DataFrame(columns=["Word", "Number", "Gender", "Sense", "Sentence", "Word Vector", "Sentence Vector"])
-    number = process_number(language,relevant_pairs,entry_dict,model,tokenizer,number)
+    number = process_number(relevant_pairs,entry_dict,model,tokenizer,number)
     number.to_csv(path + "number.csv",sep="\t")
     number.to_pickle(path + "number.pkl")
     no_ambiguity = pd.DataFrame(columns=["Word", "Number", "Gender", "Sense", "Sentence", "Word Vector", "Sentence Vector"])
-    no_ambiguity = process_other(language,other,entry_dict,model,tokenizer,no_ambiguity)
+    no_ambiguity = process_other(other,entry_dict,model,tokenizer,no_ambiguity)
     no_ambiguity.to_csv(path + "other.csv",sep="\t")
     no_ambiguity.to_pickle(path + "other.pkl")
     if language.lower() != "english":
         gender = pd.DataFrame(columns=["Word", "Number", "Gender", "Sense", "Sentence", "Word Vector", "Sentence Vector"])
-        gender = process_gender(language,gender_list,entry_dict,model,tokenizer,gender)
+        gender = process_gender(gender_list,entry_dict,model,tokenizer,gender)
         gender.to_csv(path + "gender.csv", sep="\t")
         gender.to_pickle(path + "gender.pkl")
 
 if __name__ == "__main__":
-    language = sys.argv[1]
+    language = sys.argv[1].lower()
+    if language not in ["german","spanish","english"]:
+        print(language + " is not supported.")
+        sys.exit()
+    elif language in ["german","spanish"]:
+        model = BertModel.from_pretrained("bert-base-multilingual-uncased")
+        tokenizer = BertTokenizer.from_pretrained("bert-base-multilingual-uncased")
+    else:
+        model = BertModel.from_pretrained("bert-base-uncased")
+        tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+    shorts = {"german":"de","spanish":"es","english":"en"}
     if "win" in sys.platform:
-        if language.lower() == "german":
-            filename = "german_wiktionary\\wiktionaries\\dewiktionary-new.txt"
-            outpath = "german_wiktionary\\"
-            model = BertModel.from_pretrained('bert-base-multilingual-uncased')
-            tokenizer = BertTokenizer.from_pretrained('bert-base-multilingual-uncased')
-        elif language.lower() == "english":
-            filename = "english_wiktionary\\wiktionaries\\enwiktionary-new.txt"
-            outpath = "english_wiktionary\\"
-            model = BertModel.from_pretrained('bert-base-uncased')
-            tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-        elif language.lower() == "spanish":
-            filename = "spanish_wiktionary\\wiktionaries\\eswiktionary-new.txt"
-            outpath = "spanish_wiktionary\\"
-            model = BertModel.from_pretrained('bert-base-multilingual-uncased')
-            tokenizer = BertTokenizer.from_pretrained('bert-base-multilingual-uncased')
-        else:
-            sys.exit()
+        filename = language + "_wiktionary\\wiktionaries\\" + shorts[language] + "wiktionary-new.txt"
+        outpath = language + "_wiktionary\\"
     elif "linux" in sys.platform:
-        if language.lower() == "german":
-            filename = "german_wiktionary/wiktionaries/dewiktionary-new.txt"
-            outpath = "german_wiktionary/"
-            model = BertModel.from_pretrained('bert-base-multilingual-uncased')
-            tokenizer = BertTokenizer.from_pretrained('bert-base-multilingual-uncased')
-        elif language.lower() == "english":
-            filename = "english_wiktionary/wiktionaries/enwiktionary-new.txt"
-            outpath = "english_wiktionary/"
-            model = BertModel.from_pretrained('bert-base-uncased')
-            tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-        elif language.lower() == "spanish":
-            filename = "spanish_wiktionary/wiktionaries/eswiktionary-new.txt"
-            outpath = "spanish_wiktionary/"
-            model = BertModel.from_pretrained('bert-base-multilingual-uncased')
-            tokenizer = BertTokenizer.from_pretrained('bert-base-multilingual-uncased')
-        else:
-            sys.exit()
+        filename = language + "_wiktionary/wiktionaries/" + shorts[language] + "wiktionary-new.txt"
+        outpath = language + "_wiktionary\\"
     else:
         print(sys.platform," is not supported.")
     # Load pre-trained model (weights)

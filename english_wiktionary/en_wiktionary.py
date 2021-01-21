@@ -106,7 +106,7 @@ def get_plural_wiktionary(text_wiki, stem):
     return plural
 
 
-def write_file(language,title,filename,cat):
+def write_file(language,shorts,title,filename,cat):
     """
     Find relevant data in English Wiktionary-page: \n
     plural (list of str)\n
@@ -114,6 +114,7 @@ def write_file(language,title,filename,cat):
     senses (list of str)\n
     example sentences (list of str)\n\n
     ;param language: (str) Specified language of the file (specified for English/German/Spanish)\n
+    ;param shorts: (dict) Dictionary containing shortforms of all languages\n
     ;param title: (str) title of the currently observed page/the current word\n
     ;param filename: (str) name/directory of output-file\n
     ;param cat: (str) text-part containing all necessary information\n
@@ -133,7 +134,7 @@ def write_file(language,title,filename,cat):
     if "=Noun==" in cat: # get the "noun" category
         senses = dict()
         filename.write("title: " + str(title) + "\n")
-        plural= get_plural_wiktionary(cat,title) # get the plural by current category and title
+        plural= get_plural_wiktionary(cat,title) # get the plural by current category and title, might not work for languages other than English
         filename.write("\tplural: " + str(plural) + "\n")
         lines = cat.split("\n")
         current_sense = ""
@@ -143,13 +144,7 @@ def write_file(language,title,filename,cat):
             if line.startswith('# ') and not 'alternative' in line: # when the line contains a meaning that is not "being the alternative of another word"
                 sense = line # this line equals the sense/meaning
                 current_sense = sense
-            # find gender in Spanish data
-            elif language == "Spanish" and line.startswith("{{es-noun|"):
-                current = line.split("|")
-                gender = current[1]
-                all_gender[title].append(gender)
-            # fiind gender in German data
-            elif language == "German" and line.startswith("{{de-noun|"):
+            elif language != "english" and line.startswith("{{" + shorts[language] + "-noun|"):
                 current = line.split("|")
                 gender = current[1]
                 all_gender[title].append(gender)
@@ -194,7 +189,7 @@ def write_file(language,title,filename,cat):
     counter = 1
     all_examples = []
     # get additional senses/examples from WordNet
-    if senses == {} and language == "English": # when there are no entries for this word
+    if senses == {} and language == "english": # when there are no entries for this word
         for item in wn.synsets(title,"n"): # find the according wiktionary noun synsets 
             examples = item.examples()
             if examples:
@@ -206,12 +201,7 @@ def write_file(language,title,filename,cat):
             if title in example:
                 all_examples.append(example)
             else:
-                if language.lower() == "english":
-                    tool = language_check.LanguageTool("en-US") # create the tool for grammar-checking the adjusted examples
-                elif language.lower() == "german":
-                    tool = language_check.LanguageTool("de-DE")
-                elif language.lower() == "spanish":
-                    tool = language_check.LanguageTool("es")
+                tool = language_check.LanguageTool(shorts[language])
                 new_example = replace_words_in_examples_new(title,example,tool)
                 all_examples.append(new_example)
         filename.write("\t\t\texample(s)" + str(counter) + ": " + str(all_examples) + "\n")
@@ -246,7 +236,7 @@ def replace_words_in_examples_new(word,sentence,tool):
                     replace_item = ""
     return replace_item                                      
 
-def english_xml_parser(language,infile,outfile):
+def english_xml_parser(language,shorts,infile,outfile):
     """
     Parser for English Wiktionary-dumps\n
     ;param language: (str) language of input-pages\n
@@ -254,6 +244,7 @@ def english_xml_parser(language,infile,outfile):
     ;param outfile: (txt-file) directory of output-file\n
     ;returns: -
     """
+    language_capitalized = language[0].upper() + language[1:] # for matching in text
     tree = ET.parse(infile)
     root = tree.getroot()   
     for child in root:
@@ -269,26 +260,23 @@ def english_xml_parser(language,infile,outfile):
                                 text_wiki = element.text
                                 if text_wiki: # when there is any text in this part of the tree
                                     for textbit in text_wiki.split('----'):      
-                                        if "==" + language + "==" in textbit: # find the section for the current language (English Spanish German)
+                                        if "==" + language_capitalized + "==" in textbit: # find the section for the current language (English Spanish German)
                                             if "===Etymology" not in textbit: # when there is no etymology
                                                 for cat in textbit.split("\n=="): # find the different categories in this subtree
                                                     if title != None:
-                                                        write_file(language,title,outfile,cat)
+                                                        write_file(language,shorts,title,outfile,cat)
                                             else:
                                                 segments = textbit.split('===Etymology') # find etymology
                                                 for segment in segments: # for each part of the etymology
                                                     if segment.startswith("===\n"): # find the categories
                                                         for cat in segment.split("\n=="): # for each category
                                                             if title != None:
-                                                                write_file(language,title,outfile,cat)
+                                                                write_file(language,shorts,title,outfile,cat)
                                                     elif re.match("\s*\d+===",segment): # find other kinds of categories
                                                         for cat in segment.split("\n=="): # for each category
                                                             if title != None:
-                                                                write_file(language,title,outfile,cat)
+                                                                write_file(language,shorts,title,outfile,cat)
                                 else:
                                     element.clear()
                     else:
                         grandchild.clear()
-        else:
-            pass
-            child.clear()

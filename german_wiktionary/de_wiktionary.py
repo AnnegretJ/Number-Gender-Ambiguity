@@ -26,21 +26,20 @@ def write_dict(entries,title,language):
     """
     re_number_of = re.compile(":\[(\d+)\]")
     i = 1
-    if language == "German":
+    if language == "german":
         senses = entries[title]["textbit"].split('== {{Wortart|Substantiv|Deutsch}}')
-    elif language == "Spanish":
+    elif language == "spanish":
         senses = entries[title]["textbit"].split("== {{Wortart|Substantiv|Spanisch}}")
-    elif language == "English":
+    elif language == "english":
         senses = entries[title]["textbit"].split("== {{Wortart|Substantiv|Englisch}}")
+    overview = {"german":"Deutsch Substantiv Übersicht","english":"English Substantiv Übersicht","spanish":"Spanisch Substantiv Übersicht"}
     for sense in senses:
         entries[title][i] = defaultdict(list)
         # find information for German
-        if language == "German":
-            entries[title][i]["flection"] = set()
+        entries[title][i]["flection"] = set()
         fields = sense.split("\n{{")
         for field in fields:
-            # get information for German
-            if language == "German" and "Deutsch Substantiv Übersicht" in field:
+            if overview[language] in field:
                 morphs = field.split("\n")
                 for morph in morphs:
                     if "Genus" in morph:
@@ -54,36 +53,12 @@ def write_dict(entries,title,language):
                         for line in lines:
                             if "=" in line:
                                 c = line.split("=")[-1]
-                                entries[title][i]["flection"].add(c)
+                                if c != "-" and c != "":
+                                    entries[title][i]["flection"].add(c)
                             else:
                                 c = line.split(" ")[-1]
-                                entries[title][i]["flection"].add(c)  
-            # get information for Spanish
-            elif language == "Spanish" and "Spanisch Substantiv Übersicht" in field:
-                morphs = field.split("\n")
-                for morph in morphs:
-                    if "Genus" in morph:
-                        if "=" in morph:
-                            g = morph.split("=")[-1]
-                        else:
-                            g = morph.split(" ",1)[-1]
-                        entries[title][i]["gender"].append(g)
-                    elif "Plural" in morph or "Pl." in morph:
-                        if "=" in morph:
-                            plural = morph.split("=")[-1]
-                        else:
-                            plural = morph.split(" ",1)[-1]
-                        entries[title][i]["plural"].append(plural)
-            # get information for English
-            elif language == "English" and "Englisch Substantiv Übersicht" in field:
-                morphs = field.split("\n")
-                for morph in morphs:
-                    if "Plural" in morph or "Pl." in morph:
-                        if "=" in morph:
-                            plural = morph.split("=")[-1]
-                        else:
-                            plural = morph.split(" ",1)[-1]
-                        entries[title][i]["plural"].append(plural)
+                                if c != "-" and c != "":
+                                    entries[title][i]["flection"].add(c)  
             # find additional plural-versions
             elif "Worttrennung}}" in field:
                 infos = field.split("\n")
@@ -103,6 +78,8 @@ def write_dict(entries,title,language):
                 field = re.sub("Bedeutungen}}\n","",field)
                 meanings = field.split("\n")
                 for meaning in meanings:
+                    if any([item in meaning for item in ["Name","Vorname","Nachname","Familienname"]]):
+                        continue
                     if re_number_of.search(meaning):
                         number_of = re_number_of.search(meaning)
                         number = number_of.group(1)
@@ -124,10 +101,18 @@ def write_dict(entries,title,language):
                     n += 1
                     if "Beispiele fehlen" in e:
                         continue
+                    if "<ref>" in e:
+                        e = e.split("<ref>")[0]
+                    if "/" in e:
+                        items = e.split("/")
+                        for it in items:
+                            if title in it and not it[len(" ''"+title+"'' "):].startswith("<"):
+                                e = it
+                                break
                     entries[title][i]["examples"][number].append(e)
         i += 1
 
-def german_xml_parser(language,infile,outfile,entries=dict(),plurals=set(),n=0):
+def german_xml_parser(language,shorts,infile,outfile):
     """
     Parser for German Wiktionary-dumps\n
     ;param language: (str) language of input-pages\n
@@ -150,6 +135,8 @@ def german_xml_parser(language,infile,outfile,entries=dict(),plurals=set(),n=0):
     """
     tree = ET.parse(infile)
     root = tree.getroot()
+    plurals = set()
+    entries = dict()
     for child in root:
         for child2 in child:
             # find page
@@ -169,39 +156,21 @@ def german_xml_parser(language,infile,outfile,entries=dict(),plurals=set(),n=0):
                                 if text_wiki:
                                     # add textbit to dictionary
                                     for textbit in text_wiki.split("---"):
-                                        if language == "German" and "Substantiv|Deutsch" in textbit: # find the German-section for nouns  
+                                        if language == "german" and "Substantiv|Deutsch" in textbit: # find the German-section for nouns  
                                             entries[word] = {}
                                             entries[word]["textbit"] = textbit
-                                        elif language == "Spanish" and "Substantiv|Spanisch" in textbit:
+                                        elif language == "spanish" and "Substantiv|Spanisch" in textbit:
                                             entries[word] = {}
                                             entries[word]["textbit"] = textbit
-                                        elif language == "English" and "Substantiv|Englisch" in textbit:
+                                        elif language == "english" and "Substantiv|Englisch" in textbit:
                                             entries[word] = {}
                                             entries[word]["textbit"] = textbit
     for title in entries:
         if "textbit" in entries[title].keys():
             write_dict(entries,title,language)
             del entries[title]["textbit"]
-            # find additional information from WordNet for English data
-            if language == "English" and all(entries[title][index]["senses"] == {} for index in entries[title].keys()):
-                index = 1
-                example_index = 1
-                for item in wn.synsets(title,"n"): # find the according WordNet noun synsets 
-                    examples = item.examples()
-                    actual_examples = []
-                    for example in examples:
-                        if title in example:
-                            actual_examples.append(example)
-                        else:
-                            tool = language_check.LanguageTool("en-US") # create the tool for grammar-checking the adjusted examples
-                            new_example = replace_words_in_examples_new(title,example,tool)
-                            actual_examples.append(new_example)
-                    entries[title][index]["senses"] = item
-                    entries[title][index]["examples"][example_index] = actual_examples
-                    index += 1
-                    example_index += 1
     # find words that look like a plural of another word, but are not actually
-    if language == "German":
+    if language == "german":
         word = plurals.pop()
         for item in entries: # title
             if word[:-1] == item or word[:-2] == item: # if the word looks like a pluralversion of the title
@@ -210,46 +179,17 @@ def german_xml_parser(language,infile,outfile,entries=dict(),plurals=set(),n=0):
                         entries[item][subitem]["plural"].append(word)
     # write the file
     for el in entries:
-        n += 1
         outfile.write("title: " + str(el) + "\n")
         for el2 in entries[el]:
+            if "flection" in entries[el][el2] and entries[el][el2]["flection"] != set():
+                outfile.write("\tinflection: " + str(entries[el][el2]["flection"]) + "\n")
             if "gender" in entries[el][el2]:
                 outfile.write("\tgender: " + str(entries[el][el2]["gender"]) + "\n")
             if "plural" in entries[el][el2]:
                 outfile.write("\tplural: " + str(entries[el][el2]["plural"]) + "\n")
-            if "flection" in entries[el][el2]:
-                outfile.write("\t\tinflection: " + str(entries[el][el2]["flection"]) + "\n")
             if "senses" in entries[el][el2]:
                 for number in entries[el][el2]["senses"]:
                     outfile.write("\t\tsense" +  str(number) + ": " + str(entries[el][el2]["senses"][number]) + "\n")
                     if "examples" in entries[el][el2] and number in entries[el][el2]["examples"]:
                         outfile.write("\t\t\texample(s)" + str(number) + ": " +  str(entries[el][el2]["examples"][number]) + "\n")
         outfile.write("\n")
-
-def replace_words_in_examples_new(word,sentence,tool):
-    '''
-    instead of deleting entries where word does not appear in an example sentence, replace the appearing synonym with the word\n
-    ;param word: (str) the word supposed to be found in sentence\n
-    ;param sentence: (str) an example sentence for a sense of word, that does not contain word\n
-    ;param tool: (language_check.LanguageTool) a tool for correcting grammar\n
-    ;returns: (str) adjusted example\n
-    '''
-    replace_item = ""
-    synonyms = wn.synsets(word, "n") # find all synonyms of the word, that are nouns as well
-    for syn in synonyms:
-        syn_lemmas = syn.lemma_names() # find the lemma for the synonym
-        for s in syn_lemmas:
-            if s in sentence.split(): # check if the synonym appears in the example sentence
-                replace_item = re.sub(r"\b{}\b".format(s),word,sentence.lower()) # replace the word by its synonym => this might lead to grammar problems
-                matches = tool.check(replace_item) # check if the sentence is grammatically correct
-                n = 0
-                while n < len(matches):
-                    new = language_check.correct(replace_item, matches[n:]) # correct the grammar by using the possible solutions in matches
-                    if word not in new.split():
-                        n += 1
-                    else:
-                        replace_item = new
-                        break
-                if word not in replace_item.split():
-                    replace_item = ""
-    return replace_item  
