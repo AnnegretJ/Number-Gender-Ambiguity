@@ -6,7 +6,7 @@ german_wiktionary/__pycache__/*
 spanish_wiktionary/__pycache__/*
 presentation/*
 split_files_output/*
-wiktionaries/*
+english_wiktionary/wiktionaries/*
 german_wiktionary/wiktionaries/*
 spanish_wiktionary/wiktionaries/*
 *.xml
