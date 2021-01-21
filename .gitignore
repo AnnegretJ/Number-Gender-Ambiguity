@@ -9,7 +9,6 @@ split_files_output/*
 english_wiktionary/wiktionaries/*
 german_wiktionary/wiktionaries/*
 spanish_wiktionary/wiktionaries/*
-*.xml
 *.zip
 *.txt
 */.xml
@@ -18,4 +17,6 @@ spanish_wiktionary/wiktionaries/*
 */.pkl
 */*/.xml
 */*/.zip
+*/*/.csv
+*/*/.pkl
 git/*
