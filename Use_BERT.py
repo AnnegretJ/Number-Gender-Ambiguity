@@ -13,6 +13,7 @@ from preprocessing import *
 import sys
 from tqdm import tqdm
 import numpy as np
+from transformers import AutoTokenizer, AutoModelForMaskedLM, BertForMaskedLM, BertTokenizer
 
 def get_marked_text_from_examples(sentence):
     """
@@ -238,9 +239,15 @@ if __name__ == "__main__":
     if language not in ["german","spanish","english"]:
         print(language + " is not supported.")
         sys.exit()
-    elif language in ["german","spanish"]:
-        model = BertModel.from_pretrained("bert-base-multilingual-uncased")
-        tokenizer = BertTokenizer.from_pretrained("bert-base-multilingual-uncased")
+    elif language == "german":
+        tokenizer = AutoTokenizer.from_pretrained("bert-base-german-cased")
+        model = AutoModelForMaskedLM.from_pretrained("bert-base-german-cased")
+    elif language == "spanish":
+        tokenizer = BertTokenizer.from_pretrained("pytorch/", do_lower_case=False)
+        model = BertForMaskedLM.from_pretrained("pytorch/")
+    # elif language in ["german","spanish"]:
+    #     model = BertModel.from_pretrained("bert-base-multilingual-uncased")
+    #     tokenizer = BertTokenizer.from_pretrained("bert-base-multilingual-uncased")
     else:
         model = BertModel.from_pretrained("bert-base-uncased")
         tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
