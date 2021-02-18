@@ -13,7 +13,7 @@ from preprocessing import *
 import sys
 from tqdm import tqdm
 import numpy as np
-from transformers import AutoTokenizer, AutoModelForMaskedLM, BertForMaskedLM, BertTokenizer
+from transformers import BertForMaskedLM, BertTokenizer, AutoTokenizer, AutoModelForMaskedLM
 
 def get_marked_text_from_examples(sentence):
     """
@@ -54,11 +54,8 @@ def run_BERT(word,tokenizer ,text, model):
     batch_word = 0
     token_word = 0
     token_word = word_position
-    layer_word = word_position
-    try:
-        vec_word = encoded_layers[layer_word][batch_word][token_word]
-    except IndexError:
-        vec_word = np.nan
+    layer_word = -1
+    vec_word = encoded_layers[layer_word][batch_word][token_word]
     # `encoded_layers` is a Python list.
     # Each layer in the list is a torch tensor.
     # Concatenate the tensors for all layers. We use `stack` here to
