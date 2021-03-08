@@ -21,3 +21,5 @@ spanish_wiktionary/wiktionaries/*
 */*/*.csv
 */*/*.pkl
 git/*
+spanish_wiktionary/multilingual/*
+german_wiktionary/multilingual/*
