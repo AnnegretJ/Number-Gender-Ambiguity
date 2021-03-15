@@ -22,11 +22,8 @@ spanish_wiktionary/wiktionaries/*
 */*/*.pkl
 git/*
 spanish_wiktionary/multilingual/*
-spanish_wiktionary/spanish/*
 spanish_wiktionary/specific/*
 german_wiktionary/multilingual/*
-german_wiktionary/german/*
 german_wiktionary/specific/*
 english_wiktionary/multilingual/*
-english_wiktionary/english/*
 english_wiktionary/specific/*
