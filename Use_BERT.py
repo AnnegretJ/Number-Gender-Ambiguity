@@ -7,13 +7,13 @@ Last Updated on Sun December 10 17:29 2020
 
 
 import torch
-from pytorch_pretrained_bert import BertTokenizer, BertModel, BertForMaskedLM
+# from pytorch_pretrained_bert import BertTokenizer, BertModel, BertForMaskedLM
 import pandas as pd # for building the file
 from preprocessing import *
 import sys
 from tqdm import tqdm
 import numpy as np
-from transformers import BertForMaskedLM, BertTokenizer, AutoTokenizer, AutoModelForMaskedLM
+from transformers import BertForMaskedLM, BertTokenizer, AutoTokenizer, AutoModelForMaskedLM, BertModel, BertTokenizer
 
 def get_marked_text_from_examples(sentence):
     """
@@ -46,10 +46,7 @@ def run_BERT(word,tokenizer ,text, model):
     model.eval()
     # Predict hidden states features for each layer
     with torch.no_grad():
-        try:
-            encoded_layers, _ = model(tokens_tensor, segments_tensors)
-        except RuntimeError:
-            return (None,None)
+        encoded_layers = model(tokens_tensor, segments_tensors)[-1]
     layer_word = 0
     batch_word = 0
     token_word = 0
@@ -88,6 +85,7 @@ def process_number(relevant_pairs,entry_dict,model,tokenizer,frame):
     ;param model: specified BERT-model\n
     ;param tokenizer: BertTokenizer\n
     ;param frame: pandas dataframe for file-output\n
+    ;param t: boolean about if it is a torch model (True) or a transformers model (False)\n
     ;returns: pandas dataframe containing all calculated vectors
     """
     print("Calculating number-ambiguity embeddings...")
@@ -142,6 +140,7 @@ def process_gender(gender_list,entry_dict,model,tokenizer,frame):
     ;param model: specified BERT-model\n
     ;param tokenizer: BertTokenizer\n
     ;param frame: pandas dataframe for file-output\n
+    ;param t: boolean about if it is a torch model (True) or a transformers model (False)\n
     ;returns: pandas dataframe containing all calculated vectors
     """
     print("Calculating gender-ambiguity embeddings...")
@@ -178,6 +177,7 @@ def process_other(other,entry_dict,model,tokenizer,frame):
     ;param model: specified BERT-model\n
     ;param tokenizer: BertTokenizer\n
     ;param frame: pandas dataframe for file-output\n
+    ;param t: boolean about if it is a torch model (True) or a transformers model (False)\n
     ;returns: pandas dataframe containing all calculated vectors
     """
     print("Calculating non-ambiguity embeddings...")
@@ -233,28 +233,36 @@ def write_files(language,path,filename,tokenizer,model):
 
 if __name__ == "__main__":
     language = sys.argv[1].lower()
+    model_type = sys.argv[2].lower()
+    if model_type not in ["specific","multilingual"]:
+        print("Invalid model type: " + model_type)
+        sys.exit()
     if language not in ["german","spanish","english"]:
         print(language + " is not supported.")
         sys.exit()
-    elif language == "german":
-        tokenizer = AutoTokenizer.from_pretrained("bert-base-german-cased")
-        model = AutoModelForMaskedLM.from_pretrained("bert-base-german-cased")
-    elif language == "spanish":
-        tokenizer = BertTokenizer.from_pretrained("pytorch/", do_lower_case=False)
-        model = BertForMaskedLM.from_pretrained("pytorch/")
-    # elif language in ["german","spanish"]:
-    #     model = BertModel.from_pretrained("bert-base-multilingual-uncased")
-    #     tokenizer = BertTokenizer.from_pretrained("bert-base-multilingual-uncased")
+    elif language == "german" and model_type == "specific":
+        tokenizer = AutoTokenizer.from_pretrained("dbmdz/bert-base-german-uncased")
+        model = AutoModelForMaskedLM.from_pretrained("dbmdz/bert-base-german-uncased",output_hidden_states=True)
+    elif language == "spanish" and model_type == "specific":
+        tokenizer = AutoTokenizer.from_pretrained("dccuchile/bert-base-spanish-wwm-cased")
+        model = AutoModelForMaskedLM.from_pretrained("dccuchile/bert-base-spanish-wwm-cased",output_hidden_states=True)
+    elif language in ["german","spanish"] and model_type == "multilingual":
+        model = BertModel.from_pretrained("bert-base-multilingual-uncased",output_hidden_states=True)
+        tokenizer = BertTokenizer.from_pretrained("bert-base-multilingual-uncased")
     else:
-        model = BertModel.from_pretrained("bert-base-uncased")
-        tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+        if model_type == "specific":
+            model = BertModel.from_pretrained("bert-base-uncased",output_hidden_states=True)
+            tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+        else:
+            model = BertModel.from_pretrained("bert-base-multilingual-uncased")
+            tokenizer = BertTokenizer.from_pretrained("bert-base-multilingual-uncased")
     shorts = {"german":"de","spanish":"es","english":"en"}
     if "win" in sys.platform:
         filename = language + "_wiktionary\\wiktionaries\\" + shorts[language] + "wiktionary-new.txt"
         outpath = language + "_wiktionary\\"
     elif "linux" in sys.platform:
         filename = language + "_wiktionary/wiktionaries/" + shorts[language] + "wiktionary-new.txt"
-        outpath = language + "_wiktionary\\"
+        outpath = language + "_wiktionary/"
     else:
         print(sys.platform," is not supported.")
     # Load pre-trained model (weights)
