@@ -3,11 +3,15 @@ from nltk.corpus import wordnet as wn
 import string
 import sys
 from tqdm import tqdm
+from fsplit.filesplit import Filesplit
+import os
+import os.path
 
-def read_files(filename):
+def read_files(filename,title=""):
     """
     function to read in files containing necessary information\n
     ;param filename: (txt-file) directory of input-file\n
+    ;param title: last title from previous file, in case file was split within an entry and does not start with title \n
     ;returns: dictionary containing all informations of the file\n
     """
     with open(filename,mode="r",encoding="utf-8") as data:
@@ -96,7 +100,7 @@ def read_files(filename):
                                 if item in sentence:
                                     entry_dict[title]["examples"][index].add(sentence)
                                     break
-    return entry_dict
+    return (entry_dict,title)
 
 def find_sets(entry_dict):
     """
@@ -132,13 +136,30 @@ if __name__ == "__main__":
     if language not in ["german","spanish","english"]:
         print(language + " is not supported.")
         sys.exit()
-    if "win" in sys.platform:
-        filename = language + "_wiktionary\\wiktionaries\\" + shorts[language] + "wiktionary-new.txt"
-    elif "linux" in sys.platform:
-        filename = language + "_wiktionary/wiktionaries/" + shorts[language] + "wiktionary-new.txt"
+    filename = language + "_wiktionary/wiktionaries/" + shorts[language] + "wiktionary-new.txt"
+    stat = os.stat(filename)
+    if stat.st_size > 30000000: # bytesize of the file
+        try: 
+            first = language + "_wiktionary/wiktionaries/" + shorts[language] + "wiktionary-new_1.txt"
+            second = language + "_wiktionary/wiktionaries/" + shorts[language] + "wiktionary-new_2.txt"
+            if os.path.isfile(first) == False or os.path.isfile(second) == False:
+                raise FileNotFoundError
+        except FileNotFoundError:
+            # split file in half
+            fs = Filesplit()
+            fs.split(filename,30000000,newline=True,output_dir=language+"_wiktionary/wiktionaries") # might split within an entry, possibly resulting in loss of information for this one entry
+            first = language + "_wiktionary/wiktionaries/" + shorts[language] + "wiktionary-new_1.txt"
+            second = language + "_wiktionary/wiktionaries/" + shorts[language] + "wiktionary-new_2.txt"
+        print("Reading first file...")
+        (entry_dict,last_title) = read_files(first)
+        print("Finding relevant data in first file...")
+        (number_pairs,gender_list,others) = find_sets(entry_dict)
+        print("Reading second file...")
+        (entry_dict,_)  = read_files(second,last_title)
+        print("Finding relevant data in second file...")
+        (number_pairs,gender_list,others) = find_sets(entry_dict)
     else:
-        print(sys.platform," is not supported.")
-    print("Reading file...")
-    entry_dict = read_files(filename)
-    print("Finding relevant data...")
-    (number_pairs,gender_list,others) = find_sets(entry_dict)
+        print("Reading file...")
+        (entry_dict,_)  = read_files(filename)
+        print("Finding relevant data...")
+        (number_pairs,gender_list,others) = find_sets(entry_dict)

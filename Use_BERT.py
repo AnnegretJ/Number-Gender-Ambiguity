@@ -13,6 +13,7 @@ from preprocessing import *
 import sys
 from tqdm import tqdm
 import numpy as np
+import os.path
 from transformers import BertForMaskedLM, BertTokenizer, AutoTokenizer, AutoModelForMaskedLM, BertModel, BertTokenizer
 
 def get_marked_text_from_examples(sentence):
@@ -75,6 +76,7 @@ def run_BERT(word,tokenizer ,text, model):
     # Calculate the average of all token vectors.
     sentence_embedding = torch.mean(token_vecs, dim=0)
     return (vec_word,sentence_embedding)
+
 
 def process_number(relevant_pairs,entry_dict,model,tokenizer,frame):
     """
@@ -213,23 +215,59 @@ def write_files(language,path,filename,tokenizer,model):
     ;param model: specified BERT-model\n
     ;returns: files containing pandas dataframes for each type of data in .csv and .pkl format\n
     """
-    print("Reading file...")
-    entry_dict = read_files(filename)
-    print("Getting data...")
-    relevant_pairs,gender_list,other = find_sets(entry_dict)
+    stat = os.stat(filename)
+    if stat.st_size > 30000000: # bytesize of the file
+        try: 
+            first = language + "_wiktionary/wiktionaries/" + shorts[language] + "wiktionary-new_1.txt"
+            second = language + "_wiktionary/wiktionaries/" + shorts[language] + "wiktionary-new_2.txt"
+            if os.path.isfile(first) == False or os.path.isfile(second) == False:
+                raise FileNotFoundError
+        except FileNotFoundError:
+            # split file in half
+            fs = Filesplit()
+            fs.split(filename,30000000,newline=True,output_dir=language+"_wiktionary/wiktionaries") # might split within an entry, possibly resulting in loss of information for this one entry
+            first = language + "_wiktionary/wiktionaries/" + shorts[language] + "wiktionary-new_1.txt"
+            second = language + "_wiktionary/wiktionaries/" + shorts[language] + "wiktionary-new_2.txt"
+        print("Reading first file...")
+        entry_dict,last_title = read_files(first)
+        print("Finding relevant data in first file...")
+        (number_pairs,gender_list,others) = find_sets(entry_dict)
+        frames_first = call_functions(number_pairs,others,gender_list,entry_dict,model,tokenizer)
+        frames_first[0].to_csv(path + "number_1.csv",sep="\t")
+        frames_first[1].to_csv(path + "other_1.csv",sep="\t")
+        if language != "english":
+            frames_first[2].to_csv(path + "gender_1.csv",sep="\t")
+        print("Reading second file...")
+        entry_dict,_ = read_files(second,title=last_title)
+        print("Finding relevant data in second file...")
+        (number_pairs,gender_list,others) = find_sets(entry_dict)
+        frames_second = call_functions(number_pairs,others,gender_list,entry_dict,model,tokenizer)
+        frames_second[0].to_csv(path + "number_2.csv",sep="\t")
+        frames_secomd[1].to_csv(path + "other_2.csv",sep="\t")
+        if language != "english":
+            frames_second[2].to_csv(path + "gender_2.csv",sep="\t")
+    else:
+        print("Reading file...")
+        entry_dict,_ = read_files(filename)
+        print("Finding relevant data...")
+        (number_pairs,gender_list,others) = find_sets(entry_dict)
+        frames = call_functions(number_pairs,others,gender_list,entry_dict,model,tokenizer)
+        print("Write")
+        frames[0].to_csv(path + "number.csv",sep="\t")
+        frames[1].to_csv(path + "other.csv",sep="\t")
+        if language != "english":
+            frames[2].to_csv(path+"gender.csv",sep="\t")
+
+def call_functions(relevant_pairs,other,gender_list,entry_dict,model,tokenizer):
     number = pd.DataFrame(columns=["Word", "Number", "Gender", "Sense", "Sentence", "Word Vector", "Sentence Vector"])
     number = process_number(relevant_pairs,entry_dict,model,tokenizer,number)
-    number.to_csv(path + "number.csv",sep="\t")
-    number.to_pickle(path + "number.pkl")
     no_ambiguity = pd.DataFrame(columns=["Word", "Number", "Gender", "Sense", "Sentence", "Word Vector", "Sentence Vector"])
     no_ambiguity = process_other(other,entry_dict,model,tokenizer,no_ambiguity)
-    no_ambiguity.to_csv(path + "other.csv",sep="\t")
-    no_ambiguity.to_pickle(path + "other.pkl")
     if language.lower() != "english":
         gender = pd.DataFrame(columns=["Word", "Number", "Gender", "Sense", "Sentence", "Word Vector", "Sentence Vector"])
         gender = process_gender(gender_list,entry_dict,model,tokenizer,gender)
-        gender.to_csv(path + "gender.csv", sep="\t")
-        gender.to_pickle(path + "gender.pkl")
+        return(number,no_ambiguity,gender)
+    return (number,no_ambiguity)
 
 if __name__ == "__main__":
     language = sys.argv[1].lower()
@@ -254,7 +292,7 @@ if __name__ == "__main__":
             model = BertModel.from_pretrained("bert-base-uncased",output_hidden_states=True)
             tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
         else:
-            model = BertModel.from_pretrained("bert-base-multilingual-uncased")
+            model = BertModel.from_pretrained("bert-base-multilingual-uncased",output_hidden_states=True)
             tokenizer = BertTokenizer.from_pretrained("bert-base-multilingual-uncased")
     shorts = {"german":"de","spanish":"es","english":"en"}
     if "win" in sys.platform:
