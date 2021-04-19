@@ -41,7 +41,7 @@ $ python start_wiktionary.py <English/German/Spanish>
 * <english/german/spanish>_wiktionary/wiktionaries/<en/de/es>-wiktionary.new.txt
 
 # preprocessing.py
-In this file, the formerly gathered data is processed, so that entries without example sentences are removed and all punctuation is removed from the sentences. All data is sorted into three categories: words containing gender-ambiguity, words containing number-ambiguity, and words containing neither type of ambiguity. This file is called by Use_BERT.py, and is not supposed to be called directly, as it does not create any file output.
+In this file, the formerly gathered data is processed, so that entries without example sentences are removed and all punctuation is removed from the sentences. All data is sorted into three categories: words containing gender-ambiguity, words containing number-ambiguity, and words containing neither type of ambiguity. Especially large input files are split into smaller files and processed individually, while trying to minimize information loss. This file is called by Use_BERT.py, and is not supposed to be called directly, as it does not create any file output.
 ```
 $ python preprocessing.py
 ```
@@ -51,6 +51,9 @@ $ python preprocessing.py
 * string
 * sys
 * tqdm
+* fsplit.filesplit
+* os
+* os.path
 
 ## Functions
 * read_files(filename)
@@ -67,5 +70,93 @@ Find relevant data on number- or gender-ambiguity
 * output: (list of word-pairs (sg,pl) with number-ambiguity, list of words with gender-ambiguity, list of words with none of those ambiguity-types) (type: tuple)
 
 # Use_BERT.py
-Using the individual categories of data created by preprocessing.py, this file runs each example sentence for each word through BERT
+Using the individual categories of data created by preprocessing.py, this file runs each example sentence for each word through BERT, thereby computing word embedding vectors for each word entry based on the given example sentences. Language and model-type can be specified.
+```
+$ python Use_BERT.py <english/german/spanish> <specific/multilingual>
+```
+## Imports:
+* torch
+* pandas
+* preprocessing (see above)
+* sys
+* tqdm
+* numpy
+* os.path
+* transformers
+
+## Functions:
+* get_marked_text_from_examples(sentence)
+* run_BERT(word,tokenizer,text,model)
+* process_number(relevant_pairs,entry_dict,model,tokenizer,frame)
+* process_gender(gender_list,entry_dict,model,tokenizer,frame)
+* process_other(other,entry_dict,model,tokenizer,frame)
+* write_files(language,path,filename,tokenizer,model)
+* call_functions(relevant_pairs,other,gender_list,entry_dict,model,tokenizer)
+
+## File-Input:
+* <english/german/spanish>_wiktionary/wiktionaries/<en/de/es>_wiktionary-new.txt
+
+## File-Output:
+* <english/german/spanish>_wiktionary/<number/gender/other>.csv
+
+### get_marked_text_from_examples(sentence)
+get example sentences with special tokens for beginning and end of sentences
+* param sentence: (str) sentence that needs to be marked
+* returns: marked sentence
+
+### run_BERT(word,tokenizer,text,model)
+compute word- and sentence-embeddings for a given word and sentence
+* param word: (str) the word to calculate embeddings for
+* param tokenizer: BertTokenizer
+* param text: (str) example sentence used for context
+* param model: specified BERT-model
+* returns: tuple (word-embedding,sentence-embedding)
+
+### process_number(relevant_pairs,entry_dict,model,tokenizer,frame)
+Process data on number-ambiguity-data and run through BERT
+* param relevant_pairs: (list) list containing tuples of sg-pl-pairs
+* param entry_dict: (dict) dictionary containing all relevant information
+* param model: specified BERT-model
+* param tokenizer: BertTokenizer
+* param frame: pandas dataframe for file-output
+* returns: pandas dataframe containing all calculated vectors
+
+### process_gender(gender_list,entry_dict,model,tokenizer,frame)
+Process data on gender-ambiguity-data and run through BERT
+* param gender_list: (list) list containing words that have more than one grammatical gender
+* param entry_dict: (dict) dictionary containing all relevant information
+* param model: specified BERT-model
+* param tokenizer: BertTokenizer
+* param frame: pandas dataframe for file-output
+* returns: pandas dataframe containing all calculated vectors
+
+### process_other(other,entry_dict,model,tokenizer,frame)
+Process data on non-ambiguity-data and run through BERT
+* param other: (list) list containing all words without number- or gender-ambiguity
+* param entry_dict: (dict) dictionary containing all relevant information
+* param model: specified BERT-model
+* param tokenizer: BertTokenizer
+* param frame: pandas dataframe for file-output
+* returns: pandas dataframe containing all calculated vectors
+
+### write_files(language,path,filename,tokenizer,model)
+write dataframes to files
+* param language: specified language (supports English,German,Spanish)
+* param path: path for output-file
+* param filename: name of input-file
+* param tokenizer: BertTokenizer
+* param model: specified BERT-model
+* returns: files containing pandas dataframes for each type of data in .csv and .pkl format
+
+### call_functions(relevant_pairs,other,gender_list,entry_dict,model,tokenizer)
+calls other functions in this file in correct order
+* param relevant_pairs: (list) list containing tuples of sg-pl-pairs
+* param other: (list) list containing all words without number- or gender-ambiguity
+* param gender_list: (list) list containing words that have more than one grammatical gender
+* param entry_dict: (dict) dictionary containing all relevant information
+* param model: specifiec BERT-model
+* param tokenizer: BertTokenizer
+* returns: tuple containing pandas dataframes for number ambiguity, no ambiguity (and gender ambiguity if available)
+
+# graphs.py
 TODO
