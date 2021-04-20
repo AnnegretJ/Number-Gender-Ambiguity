@@ -158,5 +158,24 @@ calls other functions in this file in correct order
 * param tokenizer: BertTokenizer
 * returns: tuple containing pandas dataframes for number ambiguity, no ambiguity (and gender ambiguity if available)
 
-# graphs.py
-TODO
+# distances.py
+Computes cosine distance, euclidean distance, and manhattan distance for given embedding vectors. First additional argument specifies the type of data ([-n]umber, [-g]ender, [-n]umber and [g]ender, [-o]ther, [-g]ender and [o]ther, [-n]umber and [other], [-a]ll). The second argument specifies language, the third one the type of model with which the embedding vectors have been created in Use_BERT.py
+
+```
+$ python graphs.py <-n/-g/-ng/-o/-go/-no/-a> <english/german/spanish> <specific/multilingual>
+```
+
+## Imports:
+* pandas
+* torch
+* sys
+* numpy
+* os
+* itertools
+* scipy.spatial
+
+## Functions:
+
+## File-Input:
+
+## File-Output:
