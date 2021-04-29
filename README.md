@@ -159,7 +159,7 @@ calls other functions in this file in correct order
 * returns: tuple containing pandas dataframes for number ambiguity, no ambiguity (and gender ambiguity if available)
 
 # distances.py
-Computes cosine distance, euclidean distance, and manhattan distance for given embedding vectors. First additional argument specifies the type of data ([-n]umber, [-g]ender, [-n]umber and [g]ender, [-o]ther, [-g]ender and [o]ther, [-n]umber and [other], [-a]ll). The second argument specifies language, the third one the type of model with which the embedding vectors have been created in Use_BERT.py
+Computes cosine distance, euclidean distance, and manhattan distance for given embedding vectors and saves results in files. First additional argument specifies the type of data ([-n]umber, [-g]ender, [-n]umber and [g]ender, [-o]ther, [-g]ender and [o]ther, [-n]umber and [other], [-a]ll). The second argument specifies language, the third one the type of model with which the embedding vectors have been created in Use_BERT.py
 
 ```
 $ python graphs.py <-n/-g/-ng/-o/-go/-no/-a> <english/german/spanish> <specific/multilingual>
@@ -175,7 +175,48 @@ $ python graphs.py <-n/-g/-ng/-o/-go/-no/-a> <english/german/spanish> <specific/
 * scipy.spatial
 
 ## Functions:
+* distances(model,path,mode)
+* get_distances(first,second,first_vector,second_vector,cos,euc,man)
+* read_files(file_1,file_2=None,file_3=None)
+* start(data,wordlist,path,mode)
 
 ## File-Input:
+* <english/german/spanish>_wiktionary/<specific/multilingual>/<number/gender/other>.csv
 
 ## File-Output:
+* <english/german/spanish>_wiktionary/<specific/multilingual>/<number/gender/number_gender/other/number_other/gender_other/all>_cosine_distances.txt
+* <english/german/spanish>_wiktionary/<specific/multilingual>/<number/gender/number_gender/other/number_other/gender_other/all>_euclidean_distances.txt
+* <english/german/spanish>_wiktionary/<specific/multilingual>/<number/gender/number_gender/other/number_other/gender_other/all>_manhattan_distances.txt
+
+### distances(model,path,mode)
+Used to compute distances between given embedding vectors.
+* param model: (dict) dictionary containing information on specific words and their embedding vectors for all available meanings
+* param oath: (str) output path
+* param mode: (str) type of data (e.g. "number")
+* returns: file-output
+
+### get_distances(first,second,first_vector,second_vector,cos,euc,man)
+Compute all three distances between two individual vectors and write the results to a file
+* param first: word(-sense) of the first vector
+* param second: word(-sense) of the second vector
+* param first_vector: embedding vector for first
+* param second_vector: embedding vector for second
+* param cos: file for writing cosine distances
+* param euc: file for writing euclidean distances
+* param man: file for writing manhattan distances
+* returns: -
+
+### read_files(file_1,file_2=None,file_3=None)
+Reads in .csv-files created by Use_BERT.py, merges files if more than one is given.
+* param file_1: first data file
+* param file_2: if given, a second data file of same kind as file_1
+* param file_3: if given, a third data file of same kind as file_3
+* returns: pandas dataframe from files
+
+### start(data,wordlist,path,mode)
+Finds necessary data in dataframe and calls functions in correct order.
+* param data: pandas dataframe given from function read_files()
+* param wordlist: list of words of which the embedding vectors should be compared
+* param path: output path
+* param mode: type of data (e.g. "number)
+* returns: -
