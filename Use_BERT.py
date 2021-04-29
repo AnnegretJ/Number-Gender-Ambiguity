@@ -7,6 +7,8 @@ Last Updated on Sun December 10 17:29 2020
 
 
 import torch
+import tensorflow as tf
+from sensebert import SenseBert
 # from pytorch_pretrained_bert import BertTokenizer, BertModel, BertForMaskedLM
 import pandas as pd # for building the file
 from preprocessing import *
@@ -77,6 +79,16 @@ def run_BERT(word,tokenizer ,text, model):
     sentence_embedding = torch.mean(token_vecs, dim=0)
     return (vec_word,sentence_embedding)
 
+def run_senseBERT(model,text):
+    """
+    Compute embedding vectors using SenseBERT\n
+    ;param model: specified BERT-model\n
+    ;param text: text to compute embedding vectors from
+    """
+    input_ids, input_mask = model.tokenize(text)
+    model_outputs = model.run(input_ids, input_mask)
+    sentence_embedding, _, _ = model_outputs
+    return sentence_embedding
 
 def process_number(relevant_pairs,entry_dict,model,tokenizer,frame):
     """
@@ -105,13 +117,21 @@ def process_number(relevant_pairs,entry_dict,model,tokenizer,frame):
                 for example in word_examples[w_index]:
                     marked_text = get_marked_text_from_examples(example)
                     if singular in marked_text.split():
-                        (word_vector,sentence_embedding) = run_BERT(singular,tokenizer,marked_text,model)
+                        if tokenizer != None:
+                            (word_vector,sentence_embedding) = run_BERT(singular,tokenizer,marked_text,model)
+                        else: # this is the case when using SenseBERT
+                            sentence_embedding = run_senseBERT(model,marked_text)
                     # when the word does not occur in a sentence, maybe an inflected form does
                     elif any([f in marked_text.split() for f in sg_flections]):
                         for f in sg_flections:
                             if f in marked_text.split():
-                                (word_vector,sentence_embedding) = run_BERT(f,tokenizer,marked_text,model)
-                                break
+                                if tokenizer != None:
+                                    (word_vector,sentence_embedding) = run_BERT(f,tokenizer,marked_text,model)
+                                    break
+                                else:
+                                    sentence_embedding = run_senseBERT(model,marked_text)
+                                    word_vector = None # currently no word embedding computation with SenseBERT
+                                    break
                     else:
                         continue
                     frame = frame.append({"Word":singular,"Number":"Sg","Gender":entry_dict[singular]["gender"],"Sense":sense,"Sentence":example,"Word Vector": word_vector, "Sentence Vector": sentence_embedding},ignore_index=True)
@@ -126,8 +146,13 @@ def process_number(relevant_pairs,entry_dict,model,tokenizer,frame):
                     elif any([f in marked_text.split() for f in pl_flections]):
                         for f in pl_flections:
                             if f in marked_text.split():
-                                (word_vector,sentence_embedding) = run_BERT(f,tokenizer,marked_text,model)
-                                break
+                                if tokenizer != None:
+                                    (word_vector,sentence_embedding) = run_BERT(f,tokenizer,marked_text,model)
+                                    break
+                                else:
+                                    sentence_embedding = run_senseBERT(model,marked_text)
+                                    word_vector = None
+                                    break
                     else:
                         continue
                     frame = frame.append({"Word":plural,"Number":"Pl","Gender":entry_dict[plural]["gender"],"Sense":sense,"Sentence":example,"Word Vector": word_vector, "Sentence Vector": sentence_embedding},ignore_index=True)
@@ -145,6 +170,7 @@ def process_gender(gender_list,entry_dict,model,tokenizer,frame):
     ;param t: boolean about if it is a torch model (True) or a transformers model (False)\n
     ;returns: pandas dataframe containing all calculated vectors
     """
+    # This function has no option for SenseBERT, because it is English only and English is not gendered
     print("Calculating gender-ambiguity embeddings...")
     for item in tqdm(gender_list):
         examples = entry_dict[item]["examples"]
@@ -243,7 +269,7 @@ def write_files(language,path,filename,tokenizer,model):
         (number_pairs,gender_list,others) = find_sets(entry_dict)
         frames_second = call_functions(number_pairs,others,gender_list,entry_dict,model,tokenizer)
         frames_second[0].to_csv(path + "number_2.csv",sep="\t")
-        frames_secomd[1].to_csv(path + "other_2.csv",sep="\t")
+        frames_second[1].to_csv(path + "other_2.csv",sep="\t")
         if language != "english":
             frames_second[2].to_csv(path + "gender_2.csv",sep="\t")
     else:
@@ -272,7 +298,7 @@ def call_functions(relevant_pairs,other,gender_list,entry_dict,model,tokenizer):
 if __name__ == "__main__":
     language = sys.argv[1].lower()
     model_type = sys.argv[2].lower()
-    if model_type not in ["specific","multilingual"]:
+    if model_type not in ["specific","multilingual","sense"]:
         print("Invalid model type: " + model_type)
         sys.exit()
     if language not in ["german","spanish","english"]:
@@ -284,16 +310,19 @@ if __name__ == "__main__":
     elif language == "spanish" and model_type == "specific":
         tokenizer = AutoTokenizer.from_pretrained("dccuchile/bert-base-spanish-wwm-cased")
         model = AutoModelForMaskedLM.from_pretrained("dccuchile/bert-base-spanish-wwm-cased",output_hidden_states=True)
-    elif language in ["german","spanish"] and model_type == "multilingual":
+    elif language == "english" and model_type == "specific":
+        model = BertModel.from_pretrained("bert-base-uncased",output_hidden_states=True)
+        tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+    elif model_type == "multilingual":
         model = BertModel.from_pretrained("bert-base-multilingual-uncased",output_hidden_states=True)
         tokenizer = BertTokenizer.from_pretrained("bert-base-multilingual-uncased")
+    elif model_type == "sense" and language == "english":
+        with tf.Session() as session:
+            model = SenseBert("sensebert-base-uncased", session=session)
+            tokenizer = None
     else:
-        if model_type == "specific":
-            model = BertModel.from_pretrained("bert-base-uncased",output_hidden_states=True)
-            tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-        else:
-            model = BertModel.from_pretrained("bert-base-multilingual-uncased",output_hidden_states=True)
-            tokenizer = BertTokenizer.from_pretrained("bert-base-multilingual-uncased")
+        print("Cant combine model type " + model_type + "and language " + language + ".")
+        sys.exit()
     shorts = {"german":"de","spanish":"es","english":"en"}
     if "win" in sys.platform:
         filename = language + "_wiktionary\\wiktionaries\\" + shorts[language] + "wiktionary-new.txt"
