@@ -1,0 +1,8 @@
+pytorch
+python==3.7
+tqdm
+nltk
+tensorflow==1.15
+pandas
+filesplit
+language-check
