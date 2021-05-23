@@ -11,7 +11,6 @@ german_wiktionary/wiktionaries/*
 spanish_wiktionary/wiktionaries/*
 *.xml
 *.zip
-*.txt
 */*.xml
 */*.zip
 */*.csv

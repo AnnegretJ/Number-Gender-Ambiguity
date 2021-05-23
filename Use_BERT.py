@@ -8,7 +8,7 @@ Last Updated on Sun December 10 17:29 2020
 
 import torch
 import tensorflow as tf
-from sensebert import SenseBert
+# from sensebert import SenseBert
 # from pytorch_pretrained_bert import BertTokenizer, BertModel, BertForMaskedLM
 import pandas as pd # for building the file
 from preprocessing import *
@@ -79,16 +79,16 @@ def run_BERT(word,tokenizer ,text, model):
     sentence_embedding = torch.mean(token_vecs, dim=0)
     return (vec_word,sentence_embedding)
 
-def run_senseBERT(model,text):
-    """
-    Compute embedding vectors using SenseBERT\n
-    ;param model: specified BERT-model\n
-    ;param text: text to compute embedding vectors from
-    """
-    input_ids, input_mask = model.tokenize(text)
-    model_outputs = model.run(input_ids, input_mask)
-    sentence_embedding, _, _ = model_outputs
-    return sentence_embedding
+# def run_senseBERT(model,text):
+#     """
+#     Compute embedding vectors using SenseBERT\n
+#     ;param model: specified BERT-model\n
+#     ;param text: text to compute embedding vectors from
+#     """
+#     input_ids, input_mask = model.tokenize(text)
+#     model_outputs = model.run(input_ids, input_mask)
+#     sentence_embedding, _, _ = model_outputs
+#     return sentence_embedding
 
 def process_number(relevant_pairs,entry_dict,model,tokenizer,frame):
     """
@@ -128,10 +128,10 @@ def process_number(relevant_pairs,entry_dict,model,tokenizer,frame):
                                 if tokenizer != None:
                                     (word_vector,sentence_embedding) = run_BERT(f,tokenizer,marked_text,model)
                                     break
-                                else:
-                                    sentence_embedding = run_senseBERT(model,marked_text)
-                                    word_vector = None # currently no word embedding computation with SenseBERT
-                                    break
+                                # else:
+                                #     sentence_embedding = run_senseBERT(model,marked_text)
+                                #     word_vector = None # currently no word embedding computation with SenseBERT
+                                #     break
                     else:
                         continue
                     frame = frame.append({"Word":singular,"Number":"Sg","Gender":entry_dict[singular]["gender"],"Sense":sense,"Sentence":example,"Word Vector": word_vector, "Sentence Vector": sentence_embedding},ignore_index=True)
@@ -149,10 +149,10 @@ def process_number(relevant_pairs,entry_dict,model,tokenizer,frame):
                                 if tokenizer != None:
                                     (word_vector,sentence_embedding) = run_BERT(f,tokenizer,marked_text,model)
                                     break
-                                else:
-                                    sentence_embedding = run_senseBERT(model,marked_text)
-                                    word_vector = None
-                                    break
+                                # else:
+                                #     sentence_embedding = run_senseBERT(model,marked_text)
+                                #     word_vector = None
+                                #     break
                     else:
                         continue
                     frame = frame.append({"Word":plural,"Number":"Pl","Gender":entry_dict[plural]["gender"],"Sense":sense,"Sentence":example,"Word Vector": word_vector, "Sentence Vector": sentence_embedding},ignore_index=True)
@@ -298,7 +298,7 @@ def call_functions(relevant_pairs,other,gender_list,entry_dict,model,tokenizer):
 if __name__ == "__main__":
     language = sys.argv[1].lower()
     model_type = sys.argv[2].lower()
-    if model_type not in ["specific","multilingual","sense"]:
+    if model_type not in ["specific","multilingual"]: #,"sense"]:
         print("Invalid model type: " + model_type)
         sys.exit()
     if language not in ["german","spanish","english"]:
@@ -316,10 +316,10 @@ if __name__ == "__main__":
     elif model_type == "multilingual":
         model = BertModel.from_pretrained("bert-base-multilingual-uncased",output_hidden_states=True)
         tokenizer = BertTokenizer.from_pretrained("bert-base-multilingual-uncased")
-    elif model_type == "sense" and language == "english":
-        with tf.Session() as session:
-            model = SenseBert("sensebert-base-uncased", session=session)
-            tokenizer = None
+    # elif model_type == "sense" and language == "english":
+    #     with tf.Session() as session:
+    #         model = SenseBert("sensebert-base-uncased", session=session)
+    #         tokenizer = None
     else:
         print("Cant combine model type " + model_type + "and language " + language + ".")
         sys.exit()

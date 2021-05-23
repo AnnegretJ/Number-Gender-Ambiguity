@@ -2,6 +2,14 @@
 
 This project is used to gather data from Wiktionary and WordNet, and use it to calculate word vectors of nouns using BERT, with focus on disambugiation of number- and gender-ambiguity in English, German, and Spanish.
 All files have been tested using Python 3 on Windows 10 and Linux.
+
+# Requirements
+A Java version between 6 and 8 needs to be installed for the code to run. All further requirements can be installed using the following command:
+```
+$ pip install requirements.txt
+```
+
+
 What follows is a description of the individual files and their functions.
 
 # split_by_entry.py
@@ -10,11 +18,6 @@ Further, entries that do not contain any of the three languages are sorted out, 
 ```
 $ python split_by_entry.py <English/German/Spanish> <filename.xml>
 ```
-## Imports:
-* xml.etree.ElementTree
-* re
-* os
-* sys
 ## Functions: 
 * None
 ## File-Input:
@@ -28,10 +31,6 @@ This file is used to gather all neccessary information on nouns out of the files
 ```
 $ python start_wiktionary.py <English/German/Spanish>
 ```
-## Imports:
-* sys
-* tqdm
-* os
 ## Functions:
 * None
 ## File-Input:
@@ -45,16 +44,6 @@ In this file, the formerly gathered data is processed, so that entries without e
 ```
 $ python preprocessing.py
 ```
-## Imports
-* defaultdict (from collections)
-* wordnet (from nltk.corpus)
-* string
-* sys
-* tqdm
-* fsplit.filesplit
-* os
-* os.path
-
 ## Functions
 * read_files(filename)
 * find_sets(entry_dict)
@@ -74,16 +63,6 @@ Using the individual categories of data created by preprocessing.py, this file r
 ```
 $ python Use_BERT.py <english/german/spanish> <specific/multilingual>
 ```
-## Imports:
-* torch
-* pandas
-* preprocessing (see above)
-* sys
-* tqdm
-* numpy
-* os.path
-* transformers
-
 ## Functions:
 * get_marked_text_from_examples(sentence)
 * run_BERT(word,tokenizer,text,model)
@@ -166,14 +145,6 @@ $ python graphs.py <-n/-g/-ng/-o/-go/-no/-a> <english/german/spanish> <specific/
 ```
 
 ## Imports:
-* pandas
-* torch
-* sys
-* numpy
-* os
-* itertools
-* scipy.spatial
-
 ## Functions:
 * distances(model,path,mode)
 * get_distances(first,second,first_vector,second_vector,cos,euc,man)
