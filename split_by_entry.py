@@ -3,6 +3,75 @@ import re
 import os
 import sys
 import time
+from os.path import exists
+import requests
+from urllib.parse import urlparse, urljoin
+from bs4 import BeautifulSoup
+import bz2
+from bz2 import decompress
+import shutil
+
+def get_wiktionary_data(language,path):
+    # initialize general urls for wiktionary dumps
+    if language == "english":
+        url = "https://dumps.wikimedia.org/enwiktionary/"
+        wiki = "enwiktionary"
+    elif language == "german":
+        url = "https://dumps.wikimedia.org/dewiktionary/"
+        wiki = "dewiktionary"
+    elif language == "spanish":
+        url = "https://dumps.wikimedia.org/eswiktionary/"
+        wiki = "eswiktionary"
+    else:
+        print(language + " is not supported")
+        sys.exit()
+    def is_valid(url):
+        '''
+        Checks if the given url is valid\n
+        ;param url: some URL
+        '''
+        parsed = urlparse(url)
+        return bool(parsed.netloc) and bool(parsed.scheme)
+    if not is_valid(url):
+        print(url, "is not a vaild URL")
+        sys.exit()
+    name = urlparse(url).netloc
+    soup = BeautifulSoup(requests.get(url).content,"html.parser") # get urls
+    for a_tag in soup.findAll("a"):
+        new = a_tag.attrs.get("href")
+        if new == "" or new is None:
+            continue
+        if "latest" in new: # the url before "latest" is the newest relevant one
+            break
+        href = new # save as "previous"
+    new_url = urljoin(url,href) # get the url of the newest dump
+    number = href.strip("/")
+    filename = wiki + "-" + number + "-pages-articles.xml.bz2"
+    xml_filename = wiki + "-" + number + "-pages-articles.xml"
+    if not is_valid(new_url):
+        print(new_url, " is not a valid URL")
+        sys.exit()
+    if not exists(path + filename):
+        for item in os.listdir(path):
+            if wiki in item:
+                try:
+                    os.mkdir(path+"backup_data/")
+                except FileExistsError:
+                    pass
+                shutil.move(path+item,path+"backup_data/") # keep outdated data in separate folder
+                break
+        data_url = urljoin(new_url, filename).replace("\\","/")
+        if not is_valid(data_url):
+            print(data_url, " is not a valid URL")
+            sys.exit()
+        datafile = requests.get(data_url) # download data
+        open(data_url, 'wb').write(datafile.content)
+        # decompress file
+        zipfile = bz2.BZ2File(datafile) # open the file
+        data = zipfile.read() # get the decompressed data
+        newfilepath = path + xml_filename # assuming the filepath ends with .bz2
+        open(newfilepath, 'wb').write(data) # write a uncompressed file
+    return path + xml_filename
 
 start = time.time()
 languages = ["german","english","spanish"]
@@ -23,18 +92,17 @@ if len(sys.argv) >= 2:
                 else:
                     print("Not available for ", sys.platform)
                     sys.exit()
+                print("Getting data...")
+                original = get_wiktionary_data(language,path)
                 if language == "german":
-                    original = path + "dewiktionary-20200501-pages-articles.xml"
                     short = "de"
                     mediawiki = b'<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.10/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.10/ http://www.mediawiki.org/xml/export-0.10.xsd" version="0.10" xml:lang="de">\n'
                     child_language_pattern = re.compile(r"\(\{\{Sprache\|(.*?)\}\}\)")
                 elif language == "english":
-                    original = path + "enwiktionary-20200501-pages-articles.xml"
                     short = "en"
                     mediawiki = b'<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.10/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.10/ http://www.mediawiki.org/xml/export-0.10.xsd" version="0.10" xml:lang="en">\n'
                     child_language_pattern = re.compile(r"\}\}\n==(.*?)==")
                 elif language == "spanish":
-                    original = path + "eswiktionary-20200501-pages-articles.xml"
                     short = "es"
                     mediawiki = b'<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.10/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.10/ http://www.mediawiki.org/xml/export-0.10.xsd" version="0.10" xml:lang="es">\n'
                     child_language_pattern = re.compile(r"== \{\{lengua\|(.*?)\}\} ==")

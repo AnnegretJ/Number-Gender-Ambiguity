@@ -19,7 +19,15 @@ Further, entries that do not contain any of the three languages are sorted out, 
 $ python split_by_entry.py <English/German/Spanish> <filename.xml>
 ```
 ## Functions: 
-* None
+* get_wiktionary_data(language,path)
+
+### get_wiktionary_data(language,path)
+This file is used to find the latest version the wiktionary dump. If the version can be found in the specified folder already, this version is used. Else, it downloads and decompresses the latest version, moves it to the correct folder and saves possibly existing older datasets in a different folder.
+* param language: (str) The currently observed language.
+* param path: (str) The path on where to save the dataset.
+* output: (str) path + filename for the entire dataset
+* output: <english/german/spanish>_wiktionary/wiktionaries/backup_data/<filename of previous dataset>
+
 ## File-Input:
 * full wiktionary-dump in .xml-format for English, German, Spanish
 ## File-Output:

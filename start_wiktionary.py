@@ -2,7 +2,6 @@ import sys
 from tqdm import tqdm
 import time
 import os
-# get pathways to all necessary files
 
 languages = ["english","german","spanish"]
 

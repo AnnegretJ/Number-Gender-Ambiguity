@@ -6,3 +6,5 @@ tensorflow==1.15
 pandas
 filesplit
 language-check
+requests
+bs4
