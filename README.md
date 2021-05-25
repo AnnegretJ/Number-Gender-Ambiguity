@@ -9,8 +9,11 @@ A Java version between 6 and 8 needs to be installed for the code to run. All fu
 $ pip install requirements.txt
 ```
 
+# Combination with SenseBERT
+For English data, it is possible to compute word embeddings using [SenseBERT](https://github.com/AI21Labs/sense-bert). Neccessary specifications are mentioned in the section for Use_BERT.py
 
-What follows is a description of the individual files and their functions.
+
+What follows here is a description of the individual files and their functions.
 
 # split_by_entry.py
 The purpose of this file is to take the original Wiktionary-dump (tested on enwiktionary-20200501-pages-articles.xml for English, dewiktionary-20200501-pages-articles.xml for German, and eswiktionary-20200501-pages-articles.xml for Spanish) and split it into individual .xml files containing 50,000 entry-pages each.
@@ -69,11 +72,14 @@ Find relevant data on number- or gender-ambiguity
 # Use_BERT.py
 Using the individual categories of data created by preprocessing.py, this file runs each example sentence for each word through BERT, thereby computing word embedding vectors for each word entry based on the given example sentences. Language and model-type can be specified.
 ```
-$ python Use_BERT.py <english/german/spanish> <specific/multilingual>
+$ python Use_BERT.py <english/german/spanish> <specific/multilingual/sense>
 ```
+For the <sense> model to run, [SenseBERT](https://github.com/AI21Labs/sense-bert) needs to be available. For this, a download guide is shown on the linked GitHub repository. Make sure the model is downloaded in the same folder as this python file. It should end up in a folder named sense-bert. Once this is done, SenseBERT can be used for this file.
+
 ## Functions:
 * get_marked_text_from_examples(sentence)
 * run_BERT(word,tokenizer,text,model)
+* run_senseBERT(model,text)
 * process_number(relevant_pairs,entry_dict,model,tokenizer,frame)
 * process_gender(gender_list,entry_dict,model,tokenizer,frame)
 * process_other(other,entry_dict,model,tokenizer,frame)
@@ -84,7 +90,7 @@ $ python Use_BERT.py <english/german/spanish> <specific/multilingual>
 * <english/german/spanish>_wiktionary/wiktionaries/<en/de/es>_wiktionary-new.txt
 
 ## File-Output:
-* <english/german/spanish>_wiktionary/<number/gender/other>.csv
+* <english/german/spanish>_wiktionary/<specific/multilingual/sense>_<number/gender/other>.csv
 
 ### get_marked_text_from_examples(sentence)
 get example sentences with special tokens for beginning and end of sentences
@@ -98,6 +104,12 @@ compute word- and sentence-embeddings for a given word and sentence
 * param text: (str) example sentence used for context
 * param model: specified BERT-model
 * returns: tuple (word-embedding,sentence-embedding)
+
+### run_SenseBERT(model,text)
+compute sentence-embeddings for a given sentence
+* param model: specified BERT-model -> SenseBERT
+* param text: (str) example sentence used for context
+* returns: sentence embedding
 
 ### process_number(relevant_pairs,entry_dict,model,tokenizer,frame)
 Process data on number-ambiguity-data and run through BERT
@@ -126,13 +138,14 @@ Process data on non-ambiguity-data and run through BERT
 * param frame: pandas dataframe for file-output
 * returns: pandas dataframe containing all calculated vectors
 
-### write_files(language,path,filename,tokenizer,model)
+### write_files(language,path,filename,tokenizer,model,model_type)
 write dataframes to files
 * param language: specified language (supports English,German,Spanish)
 * param path: path for output-file
 * param filename: name of input-file
 * param tokenizer: BertTokenizer
 * param model: specified BERT-model
+* param model_type: (str) the type of model being used
 * returns: files containing pandas dataframes for each type of data in .csv and .pkl format
 
 ### call_functions(relevant_pairs,other,gender_list,entry_dict,model,tokenizer)
@@ -152,7 +165,6 @@ Computes cosine distance, euclidean distance, and manhattan distance for given e
 $ python graphs.py <-n/-g/-ng/-o/-go/-no/-a> <english/german/spanish> <specific/multilingual>
 ```
 
-## Imports:
 ## Functions:
 * distances(model,path,mode)
 * get_distances(first,second,first_vector,second_vector,cos,euc,man)
