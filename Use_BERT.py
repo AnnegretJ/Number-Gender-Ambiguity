@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Last Updated on Sun December 10 17:29 2020
+Last Updated on Mon June 14 18:02 2021
 
 @author: Annegret
 """
@@ -313,8 +313,8 @@ if __name__ == "__main__":
         tokenizer = AutoTokenizer.from_pretrained("dbmdz/bert-base-german-uncased")
         model = AutoModelForMaskedLM.from_pretrained("dbmdz/bert-base-german-uncased",output_hidden_states=True)
     elif language == "spanish" and model_type == "specific":
-        tokenizer = AutoTokenizer.from_pretrained("dccuchile/bert-base-spanish-wwm-cased")
-        model = AutoModelForMaskedLM.from_pretrained("dccuchile/bert-base-spanish-wwm-cased",output_hidden_states=True)
+        tokenizer = AutoTokenizer.from_pretrained("dccuchile/bert-base-spanish-wwm-uncased")
+        model = AutoModelForMaskedLM.from_pretrained("dccuchile/bert-base-spanish-wwm-uncased",output_hidden_states=True)
     elif language == "english" and model_type == "specific":
         model = BertModel.from_pretrained("bert-base-uncased",output_hidden_states=True)
         tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
