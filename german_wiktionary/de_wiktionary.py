@@ -10,10 +10,10 @@ import xml.etree.cElementTree as ET
 import re
 from collections import defaultdict
 import string
-from tqdm import tqdm
+# from tqdm import tqdm
 import sys
-from nltk.corpus import wordnet as wn
-import language_check # some module for grammar-checking
+# from nltk.corpus import wordnet as wn
+# import language_check # some module for grammar-checking
 
 
 def write_dict(entries,title,language):

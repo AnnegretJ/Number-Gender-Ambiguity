@@ -10,10 +10,10 @@ import xml.etree.cElementTree as ET
 import re
 import os
 from collections import defaultdict
-from nltk.corpus import wordnet as wn
-import language_check # some module for grammar-checking
+# from nltk.corpus import wordnet as wn
+# import language_check # some module for grammar-checking
 import sys
-from tqdm import tqdm
+# from tqdm import tqdm
 
 def get_plural_wiktionary(textbit):
     """

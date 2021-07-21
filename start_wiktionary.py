@@ -1,5 +1,5 @@
 import sys
-from tqdm import tqdm
+# from tqdm import tqdm
 import time
 import os
 
@@ -45,11 +45,13 @@ with open(path + shorts[language] + "wiktionary-new.txt",mode="w+",encoding="utf
     print("Processing data from " + language + " wiktionary...")
     # use individually splitted files
     if win:
-        for filename in tqdm(os.listdir(path + "by_entry\\")): # \ for Windows, / for Linux
+#         for filename in tqdm(os.listdir(path + "by_entry\\")): # \ for Windows, / for Linux
+        for filename in os.listdir(path + "by_entry\\"):
             with open(path + "by_entry\\" + filename, mode = "r", encoding = "utf-8") as file_in_wiktionary:
                 parser[language](language,shorts,file_in_wiktionary,wiktionary_out)
     else:
-        for filename in tqdm(os.listdir(path + "by_entry/")): # \ for Windows, / for Linux
+        for filename in os.listdir(path + "by_entry/"):
+#         for filename in tqdm(os.listdir(path + "by_entry/")): # \ for Windows, / for Linux
             with open(path + "by_entry/" + filename, mode = "r", encoding = "utf-8") as file_in_wiktionary:
                 parser[language](language,shorts,file_in_wiktionary,wiktionary_out)
     for other in languages:

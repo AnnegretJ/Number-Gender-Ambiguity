@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 import bz2
 from bz2 import decompress
 import shutil
+from datetime import date
 
 def get_wiktionary_data(language,path):
     # initialize general urls for wiktionary dumps
@@ -52,25 +53,20 @@ def get_wiktionary_data(language,path):
         print(new_url, " is not a valid URL")
         sys.exit()
     if not exists(path + filename):
-        for item in os.listdir(path):
-            if wiki in item:
-                try:
-                    os.mkdir(path+"backup_data/")
-                except FileExistsError:
-                    pass
-                shutil.move(path+item,path+"backup_data/") # keep outdated data in separate folder
-                break
         data_url = urljoin(new_url, filename).replace("\\","/")
         if not is_valid(data_url):
             print(data_url, " is not a valid URL")
             sys.exit()
         datafile = requests.get(data_url) # download data
-        open(data_url, 'wb').write(datafile.content)
+        print("Data downloaded successfully")
+        with open("url_data.xml.bz2", "wb") as f:
+            f.write(datafile.content)
         # decompress file
-        zipfile = bz2.BZ2File(datafile) # open the file
-        data = zipfile.read() # get the decompressed data
-        newfilepath = path + xml_filename # assuming the filepath ends with .bz2
-        open(newfilepath, 'wb').write(data) # write a uncompressed file
+        print("Decompress data...")
+        decompressor = bz2.BZ2Decompressor()
+        with open(path+xml_filename, 'wb') as new_file, open("url_data.xml.bz2", 'rb') as file:
+            for data in iter(lambda : file.read(100 * 1024), b''):
+                new_file.write(decompressor.decompress(data))
     return path + xml_filename
 
 start = time.time()
@@ -93,7 +89,28 @@ if len(sys.argv) >= 2:
                     print("Not available for ", sys.platform)
                     sys.exit()
                 print("Getting data...")
-                original = get_wiktionary_data(language,path)
+                current_day = date.today().strftime("%d")
+                if int(current_day) >= 20:
+                    current_date = date.today().strftime("%Y" + "%m" + "20")
+                else:
+                    current_date = date.today().strftime("%Y" + str(int("%m")-1) + "20")
+                try:
+                    if language == "english":
+                        wiktionary = "enwiktionary"
+                    elif language == "german":
+                        wiktionary = "dewiktionary"
+                    elif language == "spanish":
+                        wiktionary = "eswiktionary"
+                    original = path + wiktionary + "-" + current_date + "-pages-articles.xml"
+                except FileNotFoundError:
+                    try:
+                        os.mkdir(path+"backup_data/")
+                    except FileExistsError:
+                        pass
+                    for file in os.listdir(path):
+                        if file.endswith(".xml"):
+                           shutil.move(path+file,path+"backup_data/")
+                    original = get_wiktionary_data(language,path)
                 if language == "german":
                     short = "de"
                     mediawiki = b'<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.10/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.10/ http://www.mediawiki.org/xml/export-0.10.xsd" version="0.10" xml:lang="de">\n'

@@ -7,7 +7,7 @@ Last Updated on Mon June 14 18:02 2021
 
 
 import torch
-import tensorflow as tf
+# import tensorflow as tf
 # from pytorch_pretrained_bert import BertTokenizer, BertModel, BertForMaskedLM
 import pandas as pd # for building the file
 from preprocessing import *
@@ -321,10 +321,10 @@ if __name__ == "__main__":
     elif model_type == "multilingual":
         model = BertModel.from_pretrained("bert-base-multilingual-uncased",output_hidden_states=True)
         tokenizer = BertTokenizer.from_pretrained("bert-base-multilingual-uncased")
-    elif model_type == "sense" and language == "english":
-        with tf.Session() as session:
-            model = SenseBert("sense-bert/sensebert-base-uncased", session=session)
-            tokenizer = None
+#     elif model_type == "sense" and language == "english":
+#         with tf.Session() as session:
+#             model = SenseBert("sense-bert/sensebert-base-uncased", session=session)
+#             tokenizer = None
     else:
         print("Cant combine model type " + model_type + "and language " + language + ".")
         sys.exit()
