@@ -1,6 +1,7 @@
 .idea
 .vscode
 __pycache__
+url_data.xml.bz2
 english_wiktionary/__pycache__/*
 german_wiktionary/__pycache__/*
 spanish_wiktionary/__pycache__/*
