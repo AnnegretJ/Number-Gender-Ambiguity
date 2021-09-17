@@ -11,7 +11,7 @@ import xml.etree.cElementTree as ET
 import re
 import os
 from collections import defaultdict
-# from nltk.corpus import wordnet as wn
+from nltk.corpus import wordnet as wn
 import sys
 # import language_check # some module for grammar-checking
 
@@ -189,26 +189,26 @@ def write_file(language,shorts,title,filename,cat):
     counter = 1
     all_examples = []
     # get additional senses/examples from WordNet
-#     if senses == {} and language == "english": # when there are no entries for this word
-#         for item in wn.synsets(title,"n"): # find the according wiktionary noun synsets 
-#             examples = item.examples()
-#             if examples:
-#                senses[item] = examples
+    if senses == {} and language == "english": # when there are no entries for this word
+        for item in wn.synsets(title,"n"): # find the according wiktionary noun synsets 
+            examples = item.examples()
+            if examples:
+               senses[item] = examples
     # fix examples with no occurence of title
     for sense,examples in senses.items():
         filename.write("\t\tsense" + str(counter) + ": " + str(sense) + "\n")
         for example in examples:
             if title in example:
                 all_examples.append(example)
-#             else:
+            else:
 #                 tool = language_check.LanguageTool(shorts[language])
-#                 new_example = replace_words_in_examples_new(title,example,tool)
-#                 all_examples.append(new_example)
+                new_example = replace_words_in_examples_new(title,example) # ,tool)
+                all_examples.append(new_example)
         filename.write("\t\t\texample(s)" + str(counter) + ": " + str(all_examples) + "\n")
         counter += 1
     filename.write("\n\n")     
 
-def replace_words_in_examples_new(word,sentence,tool):
+def replace_words_in_examples_new(word,sentence): # ,tool):
     '''
     instead of deleting entries where word does not appear in an example sentence, replace the appearing synonym with the word\n
     ;param word: (str) the word supposed to be found in sentence\n
@@ -223,15 +223,15 @@ def replace_words_in_examples_new(word,sentence,tool):
         for s in syn_lemmas:
             if s in sentence.split(): # check if the synonym appears in the example sentence
                 replace_item = re.sub(r"\b{}\b".format(s),word,sentence.lower()) # replace the word by its synonym => this might lead to grammar problems
-                matches = tool.check(replace_item) # check if the sentence is grammatically correct
-                n = 0
-                while n < len(matches):
-                    new = language_check.correct(replace_item, matches[n:]) # correct the grammar by using the possible solutions in matches
-                    if word not in new.split():
-                        n += 1
-                    else:
-                        replace_item = new
-                        break
+#                 matches = tool.check(replace_item) # check if the sentence is grammatically correct
+#                 n = 0
+#                 while n < len(matches):
+#                     new = language_check.correct(replace_item, matches[n:]) # correct the grammar by using the possible solutions in matches
+#                     if word not in new.split():
+#                         n += 1
+#                     else:
+#                         replace_item = new
+#                         break
                 if word not in replace_item.split():
                     replace_item = ""
     return replace_item                                      

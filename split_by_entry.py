@@ -42,7 +42,7 @@ def get_wiktionary_data(language,path):
         new = a_tag.attrs.get("href")
         if new == "" or new is None:
             continue
-        if "latest" in new: # the url before "latest" is the newest relevant one
+        if "latest/" in new: # the url before "latest" is the newest relevant one
             break
         href = new # save as "previous"
     new_url = urljoin(url,href) # get the url of the newest dump
@@ -67,6 +67,7 @@ def get_wiktionary_data(language,path):
         with open(path+xml_filename, 'wb') as new_file, open("url_data.xml.bz2", 'rb') as file:
             for data in iter(lambda : file.read(100 * 1024), b''):
                 new_file.write(decompressor.decompress(data))
+    print(path+xml_filename)
     return path + xml_filename
 
 start = time.time()
@@ -77,6 +78,13 @@ if len(sys.argv) >= 2:
         if len(sys.argv) >= 3:
             path = ""
             original = sys.argv[2]
+            if "win" in sys.platform:
+                win = True
+            elif "linux" in sys.platform:
+                win = False
+            else:
+                print("Not available for ", sys.platform)
+                sys.exit()
         else:
             try:
                 if "linux" in sys.platform:
@@ -88,44 +96,46 @@ if len(sys.argv) >= 2:
                 else:
                     print("Not available for ", sys.platform)
                     sys.exit()
-                print("Getting data...")
-                current_day = date.today().strftime("%d")
-                if int(current_day) >= 20:
-                    current_date = date.today().strftime("%Y" + "%m" + "20")
-                else:
-                    current_date = date.today().strftime("%Y" + str(int("%m")-1) + "20")
-                try:
-                    if language == "english":
-                        wiktionary = "enwiktionary"
-                    elif language == "german":
-                        wiktionary = "dewiktionary"
-                    elif language == "spanish":
-                        wiktionary = "eswiktionary"
-                    original = path + wiktionary + "-" + current_date + "-pages-articles.xml"
-                except FileNotFoundError:
-                    try:
-                        os.mkdir(path+"backup_data/")
-                    except FileExistsError:
-                        pass
-                    for file in os.listdir(path):
-                        if file.endswith(".xml"):
-                           shutil.move(path+file,path+"backup_data/")
-                    original = get_wiktionary_data(language,path)
-                if language == "german":
-                    short = "de"
-                    mediawiki = b'<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.10/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.10/ http://www.mediawiki.org/xml/export-0.10.xsd" version="0.10" xml:lang="de">\n'
-                    child_language_pattern = re.compile(r"\(\{\{Sprache\|(.*?)\}\}\)")
-                elif language == "english":
-                    short = "en"
-                    mediawiki = b'<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.10/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.10/ http://www.mediawiki.org/xml/export-0.10.xsd" version="0.10" xml:lang="en">\n'
-                    child_language_pattern = re.compile(r"\}\}\n==(.*?)==")
-                elif language == "spanish":
-                    short = "es"
-                    mediawiki = b'<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.10/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.10/ http://www.mediawiki.org/xml/export-0.10.xsd" version="0.10" xml:lang="es">\n'
-                    child_language_pattern = re.compile(r"== \{\{lengua\|(.*?)\}\} ==")
             except FileNotFoundError:
-                print("Please specify a path.")
-                sys.exit()
+                if "linux" in sys.platform:
+                    os.mkdir(language+"_wiktionary/wiktionaries/")
+                    path = language + "_wiktionary/wiktionaries/"
+                    win = False
+                elif "win" in sys.platform:
+                    os.mkdir(language+"_wiktionary\\wiktionaries\\")
+                    path = language + "_wiktionary\\wiktionaries\\"
+                    win = True
+                else:
+                    print("Not available for ", sys.platform)
+                    sys.exit()
+            print("Getting data...")
+            current_day = date.today().strftime("%d")
+            if int(current_day) >= 20:
+                current_date = date.today().strftime("%Y" + "%m" + "20")
+            else:
+                if int(current_month) > 1:
+                    current_date = date.today().strftime("%Y" + str(int("%m")-1) + "20")
+                else:
+                    current_date = date.today().strftime(str(int("%Y")-1) + str(12) + "20") # from january to december of previous year
+            try:
+                os.mkdir(path+"backup_data/")
+            except FileExistsError:
+                pass
+        if language == "german":
+            wiktionary = "dewiktionary"
+            short = "de"
+            mediawiki = b'<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.10/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.10/ http://www.mediawiki.org/xml/export-0.10.xsd" version="0.10" xml:lang="de">\n'
+            child_language_pattern = re.compile(r"\(\{\{Sprache\|(.*?)\}\}\)")
+        elif language == "english":
+            wiktionary = "enwiktionary"
+            short = "en"
+            mediawiki = b'<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.10/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.10/ http://www.mediawiki.org/xml/export-0.10.xsd" version="0.10" xml:lang="en">\n'
+            child_language_pattern = re.compile(r"\}\}\n==(.*?)==")
+        elif language == "spanish":
+            wiktionary = "eswiktionary"
+            short = "es"
+            mediawiki = b'<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.10/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.10/ http://www.mediawiki.org/xml/export-0.10.xsd" version="0.10" xml:lang="es">\n'
+            child_language_pattern = re.compile(r"== \{\{lengua\|(.*?)\}\} ==")
     else:
         print(sys.argv[1], " is not available. Please choose from <German, English, Spanish>.")
         sys.exit()
@@ -134,7 +144,16 @@ else:
     sys.exit()
 
 n = 1
-context = ET.iterparse(original, events=('end', ))
+try:
+    original = path + wiktionary + "-" + current_date + "-pages-articles.xml"
+    context = ET.iterparse(original, events=('end', ))
+except FileNotFoundError:
+    for file in os.listdir(path):
+        if file.endswith(".xml"):
+            shutil.move(path+file,path+"backup_data/")
+    original = get_wiktionary_data(language,path)
+    context = ET.iterparse(original, events=('end', ))
+# context = ET.iterparse(original, events=('end', ))
 for i in range(len(languages)):
     if languages[i] == language:
         del languages[i]

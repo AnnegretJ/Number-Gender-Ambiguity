@@ -102,59 +102,72 @@ def process_number(relevant_pairs,entry_dict,model,tokenizer,frame):
     ;returns: pandas dataframe containing all calculated vectors
     """
     print("Calculating number-ambiguity embeddings...")
-    for (singular,plural) in tqdm(relevant_pairs):
-        word_examples = entry_dict[singular]["examples"]
-        plural_examples = entry_dict[plural]["examples"]
-        word_senses = entry_dict[singular]["senses"]
-        plural_senses = entry_dict[plural]["senses"]
-        sg_flections = entry_dict[singular]["flection"]
-        pl_flections = entry_dict[plural]["flection"]
-        # calculate embeddings for singular-terms
-        for key in word_senses.keys():
-            for w_index in word_senses[key].keys():
-                sense = word_senses[key][w_index]
-                for example in word_examples[w_index]:
-                    marked_text = get_marked_text_from_examples(example)
-                    if singular in marked_text.split():
-                        if tokenizer != None:
-                            (word_vector,sentence_embedding) = run_BERT(singular,tokenizer,marked_text,model)
-                        else: # this is the case when using SenseBERT
-                            sentence_embedding = run_senseBERT(model,marked_text)
-                    # when the word does not occur in a sentence, maybe an inflected form does
-                    elif any([f in marked_text.split() for f in sg_flections]):
-                        for f in sg_flections:
-                            if f in marked_text.split():
-                                if tokenizer != None:
-                                    (word_vector,sentence_embedding) = run_BERT(f,tokenizer,marked_text,model)
-                                    break
-                                else:
-                                    sentence_embedding = run_senseBERT(model,marked_text)
-                                    word_vector = None # currently no word embedding computation with SenseBERT
-                                    break
-                    else:
-                        continue
-                    frame = frame.append({"Word":singular,"Number":"Sg","Gender":entry_dict[singular]["gender"],"Sense":sense,"Sentence":example,"Word Vector": word_vector, "Sentence Vector": sentence_embedding},ignore_index=True)
-        # calculate embeddings for plural-terms
-        for p_key in plural_senses.keys():
-            for p_index in plural_senses[p_key].keys():
-                sense = plural_senses[p_key][p_index]
-                for example in plural_examples[p_index]:
-                    marked_text = get_marked_text_from_examples(example)
-                    if plural in marked_text.split():
-                        (word_vector,sentence_embedding) = run_BERT(plural,tokenizer,marked_text,model)
-                    elif any([f in marked_text.split() for f in pl_flections]):
-                        for f in pl_flections:
-                            if f in marked_text.split():
-                                if tokenizer != None:
-                                    (word_vector,sentence_embedding) = run_BERT(f,tokenizer,marked_text,model)
-                                    break
-                                else:
-                                    sentence_embedding = run_senseBERT(model,marked_text)
-                                    word_vector = None
-                                    break
-                    else:
-                        continue
-                    frame = frame.append({"Word":plural,"Number":"Pl","Gender":entry_dict[plural]["gender"],"Sense":sense,"Sentence":example,"Word Vector": word_vector, "Sentence Vector": sentence_embedding},ignore_index=True)
+    with open("problematic_words.txt","w+") as f:
+        for (singular,plural) in tqdm(relevant_pairs):
+            word_examples = entry_dict[singular]["examples"]
+            plural_examples = entry_dict[plural]["examples"]
+            word_senses = entry_dict[singular]["senses"]
+            plural_senses = entry_dict[plural]["senses"]
+            sg_flections = entry_dict[singular]["flection"]
+            pl_flections = entry_dict[plural]["flection"]
+            # calculate embeddings for singular-terms
+            for key in word_senses.keys():
+                for w_index in word_senses[key].keys():
+                    sense = word_senses[key][w_index]
+                    for example in word_examples[w_index]:
+                        marked_text = get_marked_text_from_examples(example)
+                        if singular in marked_text.split():
+                            if tokenizer != None:
+                                try:
+                                    (word_vector,sentence_embedding) = run_BERT(singular,tokenizer,marked_text,model)
+                                except RuntimeError:
+                                    f.write(singular + "\t" + marked_text + "\n")
+                            else: # this is the case when using SenseBERT
+                                sentence_embedding = run_senseBERT(model,marked_text)
+                        # when the word does not occur in a sentence, maybe an inflected form does
+                        elif any([f in marked_text.split() for f in sg_flections]):
+                            for f in sg_flections:
+                                if f in marked_text.split():
+                                    if tokenizer != None:
+                                        try:
+                                           (word_vector,sentence_embedding) = run_BERT(singular,tokenizer,marked_text,model)
+                                           break
+                                        except RuntimeError:
+                                            f.write(singular + "\t" + marked_text + "\n")
+                                    else:
+                                        sentence_embedding = run_senseBERT(model,marked_text)
+                                        word_vector = None # currently no word embedding computation with SenseBERT
+                                        break
+                        else:
+                            continue
+                        frame = frame.append({"Word":singular,"Number":"Sg","Gender":entry_dict[singular]["gender"],"Sense":sense,"Sentence":example,"Word Vector": word_vector.tolist(), "Sentence Vector": sentence_embedding.tolist()},ignore_index=True)
+            # calculate embeddings for plural-terms
+            for p_key in plural_senses.keys():
+                for p_index in plural_senses[p_key].keys():
+                    sense = plural_senses[p_key][p_index]
+                    for example in plural_examples[p_index]:
+                        marked_text = get_marked_text_from_examples(example)
+                        if plural in marked_text.split():
+                            try:
+                                (word_vector,sentence_embedding) = run_BERT(plural,tokenizer,marked_text,model)
+                            except RuntimeError:
+                                f.write(plural + "\t" + marked_text + "\n")
+                        elif any([f in marked_text.split() for f in pl_flections]):
+                            for f in pl_flections:
+                                if f in marked_text.split():
+                                    if tokenizer != None:
+                                        try:
+                                            (word_vector,sentence_embedding) = run_BERT(f,tokenizer,marked_text,model)
+                                            break
+                                        except RuntimeError:
+                                            f.write(plural + "\t" + marked_text + "\n")
+                                    else:
+                                        sentence_embedding = run_senseBERT(model,marked_text)
+                                        word_vector = None
+                                        break
+                        else:
+                            continue
+                        frame = frame.append({"Word":plural,"Number":"Pl","Gender":entry_dict[plural]["gender"],"Sense":sense,"Sentence":example,"Word Vector": word_vector.tolist(), "Sentence Vector": sentence_embedding.tolist()},ignore_index=True)
     return frame
 
 def process_gender(gender_list,entry_dict,model,tokenizer,frame):
@@ -192,7 +205,7 @@ def process_gender(gender_list,entry_dict,model,tokenizer,frame):
                                 break
                     else:
                         continue
-                    frame = frame.append({"Word":item,"Gender":g,"Sense":current,"Sentence":sentence,"Word Vector":word_vector,"Sentence Vector":sentence_embedding},ignore_index=True)
+                    frame = frame.append({"Word":item,"Gender":g,"Sense":current,"Sentence":sentence,"Word Vector":word_vector.tolist(),"Sentence Vector":sentence_embedding.tolist()},ignore_index=True)
     return frame
 
 def process_other(other,entry_dict,model,tokenizer,frame):
@@ -232,7 +245,7 @@ def process_other(other,entry_dict,model,tokenizer,frame):
                                     break
                     else:
                         continue
-                    frame = frame.append({"Word":item,"Gender":entry_dict[item]["gender"],"Sense":sense,"Sentence":example,"Word Vector":word_vector,"Sentence Vector":sentence_embedding},ignore_index=True)
+                    frame = frame.append({"Word":item,"Gender":entry_dict[item]["gender"],"Sense":sense,"Sentence":example,"Word Vector":word_vector.tolist(),"Sentence Vector":sentence_embedding.tolist()},ignore_index=True)
     return frame
 
 def write_files(language,path,filename,tokenizer,model,model_type):
@@ -247,58 +260,80 @@ def write_files(language,path,filename,tokenizer,model,model_type):
     ;returns: files containing pandas dataframes for each type of data in .csv and .pkl format\n
     """
     stat = os.stat(filename)
+    try:
+        os.mkdir(path + model_type + "/")
+    except FileExistsError:
+        pass
+    path = path + model_type + "/"
     if stat.st_size > 30000000: # bytesize of the file
         try: 
             first = language + "_wiktionary/wiktionaries/" + shorts[language] + "wiktionary-new_1.txt"
             second = language + "_wiktionary/wiktionaries/" + shorts[language] + "wiktionary-new_2.txt"
             if os.path.isfile(first) == False or os.path.isfile(second) == False:
                 raise FileNotFoundError
+            third = language + "_wiktionary/wiktionaries/" + shorts[language] + "wiktionary-new_3.txt"
+            if os.path.isfile(third) == False:
+                third = ""
         except FileNotFoundError:
             # split file in half
             fs = Filesplit()
             fs.split(filename,30000000,newline=True,output_dir=language+"_wiktionary/wiktionaries") # might split within an entry, possibly resulting in loss of information for this one entry
             first = language + "_wiktionary/wiktionaries/" + shorts[language] + "wiktionary-new_1.txt"
             second = language + "_wiktionary/wiktionaries/" + shorts[language] + "wiktionary-new_2.txt"
+            third = ""
+        if third != "":
+            i = 3
+        else:
+            i = 2
         print("Reading first file...")
         entry_dict,last_title = read_files(first)
         print("Finding relevant data in first file...")
         (number_pairs,gender_list,others) = find_sets(entry_dict)
-        frames_first = call_functions(number_pairs,others,gender_list,entry_dict,model,tokenizer)
-        frames_first[0].to_csv(path + model_type + "_number_1.csv",sep="\t")
-        frames_first[1].to_csv(path + model_type + "_other_1.csv",sep="\t")
-        if language != "english":
-            frames_first[2].to_csv(path + model_type + "_gender_1.csv",sep="\t")
+        call_functions(number_pairs,others,gender_list,entry_dict,model,tokenizer,path,n=i,current=1)
         print("Reading second file...")
         entry_dict,_ = read_files(second,title=last_title)
         print("Finding relevant data in second file...")
         (number_pairs,gender_list,others) = find_sets(entry_dict)
-        frames_second = call_functions(number_pairs,others,gender_list,entry_dict,model,tokenizer)
-        frames_second[0].to_csv(path + model_type + "_number_2.csv",sep="\t")
-        frames_second[1].to_csv(path + model_type + "_other_2.csv",sep="\t")
-        if language != "english":
-            frames_second[2].to_csv(path + model_type + "_gender_2.csv",sep="\t")
+        call_functions(number_pairs,others,gender_list,entry_dict,model,tokenizer,path,n=i,current=2)
+        if third != "":
+            print("Reading third file...")
+            entry_dict,last_title = read_files(third)
+            print("Finding relevant data in third file...")
+            (number_pairs,gender_list,others) = find_sets(entry_dict)
+            call_functions(number_pairs,others,gender_list,entry_dict,model,tokenizer,path,n=i,current=3)
     else:
         print("Reading file...")
         entry_dict,_ = read_files(filename)
         print("Finding relevant data...")
         (number_pairs,gender_list,others) = find_sets(entry_dict)
-        frames = call_functions(number_pairs,others,gender_list,entry_dict,model,tokenizer)
-        print("Write")
-        frames[0].to_csv(path + "number.csv",sep="\t")
-        frames[1].to_csv(path + "other.csv",sep="\t")
-        if language != "english":
-            frames[2].to_csv(path+"gender.csv",sep="\t")
+        call_functions(number_pairs,others,gender_list,entry_dict,model,tokenizer,path)
 
-def call_functions(relevant_pairs,other,gender_list,entry_dict,model,tokenizer):
+def call_functions(relevant_pairs,other,gender_list,entry_dict,model,tokenizer,path,n=1,current=1):
     number = pd.DataFrame(columns=["Word", "Number", "Gender", "Sense", "Sentence", "Word Vector", "Sentence Vector"])
     number = process_number(relevant_pairs,entry_dict,model,tokenizer,number)
+    print("Writing...")
+    if n==1:
+        number.to_csv(path + "number.csv",sep="\t")
+    else:
+        number.to_csv(path + "number_" + str(current) + ".csv",sep="\t")
+    del number
     no_ambiguity = pd.DataFrame(columns=["Word", "Number", "Gender", "Sense", "Sentence", "Word Vector", "Sentence Vector"])
     no_ambiguity = process_other(other,entry_dict,model,tokenizer,no_ambiguity)
+    print("Writing...")
+    if n==1:
+        no_ambiguity.to_csv(path + "other.csv",sep="\t")
+    else:
+        no_ambiguity.to_csv(path + "other_" + str(current) + ".csv",sep="\t")
+    del no_ambiguity
     if language.lower() != "english":
         gender = pd.DataFrame(columns=["Word", "Number", "Gender", "Sense", "Sentence", "Word Vector", "Sentence Vector"])
         gender = process_gender(gender_list,entry_dict,model,tokenizer,gender)
-        return(number,no_ambiguity,gender)
-    return (number,no_ambiguity)
+        print("Writing...")
+        if n==1:
+            gender.to_csv(path + "gender.csv",sep="\t")
+        else:
+            gender.to_csv(path + "gender_" + str(current) + ".csv",sep="\t")
+        del gender
 
 if __name__ == "__main__":
     language = sys.argv[1].lower()

@@ -10,6 +10,12 @@ split_files_output/*
 english_wiktionary/wiktionaries/*
 german_wiktionary/wiktionaries/*
 spanish_wiktionary/wiktionaries/*
+english_wiktionary/multilingual/*
+english_wiktionary/specific/*
+german_wiktionary/multilingual/*
+german_wiktionary/specific/*
+spanish_wiktionary/multilingual/*
+spanish_wiktionary/specific/*
 *.xml
 *.zip
 */*.xml
